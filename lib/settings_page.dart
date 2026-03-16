@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'sign_in_page.dart';
+import 'threshold_settings_page.dart';
+import 'notifications_page.dart';
+import 'device_info_page.dart';
+import 'system_status_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -32,6 +36,7 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
+
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -83,35 +88,82 @@ class SettingsPage extends StatelessWidget {
                 ],
               ),
             ),
+
             const SizedBox(height: 16),
+
             _settingTile(
+              context: context,
               icon: Icons.tune_rounded,
               title: 'Threshold Settings',
-              subtitle: 'Configure PM2.5, temperature, and humidity limits',
+              subtitle:
+                  'Configure PM2.5, temperature, humidity, and luminance limits',
               badge: 'Edit',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ThresholdSettingsPage(),
+                  ),
+                );
+              },
             ),
+
             const SizedBox(height: 10),
+
             _settingTile(
+              context: context,
               icon: Icons.notifications_active_outlined,
               title: 'Notifications',
               subtitle: 'Manage warnings and alert preferences',
               badge: 'On',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const NotificationsPage(),
+                  ),
+                );
+              },
             ),
+
             const SizedBox(height: 10),
+
             _settingTile(
+              context: context,
               icon: Icons.memory_rounded,
               title: 'Device Information',
               subtitle: 'View connected device and sensor details',
               badge: '2',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DeviceInformationPage(),
+                  ),
+                );
+              },
             ),
+
             const SizedBox(height: 10),
+
             _settingTile(
+              context: context,
               icon: Icons.verified_user_outlined,
               title: 'System Status',
               subtitle: 'Prototype mode and monitoring environment',
               badge: 'Live',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SystemStatusPage(),
+                  ),
+                );
+              },
             ),
+
             const SizedBox(height: 24),
+
             SizedBox(
               height: 56,
               child: ElevatedButton.icon(
@@ -148,73 +200,79 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _settingTile({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required String badge,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 21,
-            backgroundColor: primaryGreen.withValues(alpha: 0.10),
-            child: Icon(icon, color: primaryGreen),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                    height: 1.35,
-                  ),
-                ),
-              ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF6EC),
-              borderRadius: BorderRadius.circular(14),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 21,
+              backgroundColor: primaryGreen.withValues(alpha: 0.10),
+              child: Icon(icon, color: primaryGreen),
             ),
-            child: Text(
-              badge,
-              style: const TextStyle(
-                color: primaryGreen,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF6EC),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                badge,
+                style: const TextStyle(
+                  color: primaryGreen,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

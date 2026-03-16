@@ -13,9 +13,8 @@ class DashboardPage extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     final bool isSmallScreen = screenWidth < 390;
-    final double topCardHeight = isSmallScreen ? 175 : 160;
-    final double gridAspectRatio = isSmallScreen ? 0.82 : 0.92;
-    final double sensorValueSize = isSmallScreen ? 28 : 32;
+    final double gridAspectRatio = isSmallScreen ? 0.88 : 0.98;
+    final double sensorValueSize = isSmallScreen ? 26 : 30;
     final double heroTempSize = isSmallScreen ? 34 : 38;
 
     return AnimatedBuilder(
@@ -53,10 +52,8 @@ class DashboardPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   _sensorGrid(
                     reading,
-                    topCardHeight: topCardHeight,
                     gridAspectRatio: gridAspectRatio,
                     sensorValueSize: sensorValueSize,
-                    isSmallScreen: isSmallScreen,
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -203,16 +200,12 @@ class DashboardPage extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         _miniReading(
-                          label: 'PM2.5',
-                          value: '${reading.pm25.toStringAsFixed(1)}',
-                        ),
-                        _miniReading(
-                          label: 'Humidity',
-                          value: '${reading.humidity.toStringAsFixed(1)}%',
-                        ),
-                        _miniReading(
-                          label: 'Status',
+                          label: 'System Status',
                           value: reading.status,
+                        ),
+                        _miniReading(
+                          label: 'Device',
+                          value: reading.online ? 'Online' : 'Offline',
                         ),
                       ],
                     ),
@@ -312,58 +305,48 @@ class DashboardPage extends StatelessWidget {
 
   Widget _sensorGrid(
     SensorReading reading, {
-    required double topCardHeight,
     required double gridAspectRatio,
     required double sensorValueSize,
-    required bool isSmallScreen,
   }) {
-    return Column(
+    return GridView.count(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      crossAxisCount: 2,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      childAspectRatio: gridAspectRatio,
       children: [
-        GridView.count(
-          physics: const NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-          childAspectRatio: gridAspectRatio,
-          children: [
-            _colorStatCard(
-              title: 'PM2.5',
-              value: '${reading.pm25.toStringAsFixed(1)}',
-              note: 'Air particles',
-              icon: Icons.air_rounded,
-              colors: const [Color(0xFF22B8CF), Color(0xFF15AABF)],
-              height: topCardHeight,
-              valueSize: sensorValueSize,
-            ),
-            _colorStatCard(
-              title: 'Humidity',
-              value: '${reading.humidity.toStringAsFixed(1)}%',
-              note: 'Relative humidity',
-              icon: Icons.water_drop_rounded,
-              colors: const [Color(0xFFFF922B), Color(0xFFFF6B6B)],
-              height: topCardHeight,
-              valueSize: sensorValueSize,
-            ),
-          ],
+        _colorStatCard(
+          title: 'PM2.5',
+          value: '${reading.pm25.toStringAsFixed(1)}',
+          note: 'Air particles',
+          icon: Icons.air_rounded,
+          colors: const [Color(0xFF22B8CF), Color(0xFF15AABF)],
+          valueSize: sensorValueSize,
         ),
-        const SizedBox(height: 10),
-        _wideStatCard(
+        _colorStatCard(
+          title: 'Humidity',
+          value: '${reading.humidity.toStringAsFixed(1)}%',
+          note: 'Relative humidity',
+          icon: Icons.water_drop_rounded,
+          colors: const [Color(0xFFFF922B), Color(0xFFFF6B6B)],
+          valueSize: sensorValueSize,
+        ),
+        _colorStatCard(
           title: 'Temperature',
           value: '${reading.temperature.toStringAsFixed(1)}°C',
-          note: 'Normal operating range: 20°C - 24°C',
+          note: 'Normal range: 20°C - 24°C',
           icon: Icons.thermostat_rounded,
-          color: primaryGreen,
-          isSmallScreen: isSmallScreen,
+          colors: const [Color(0xFF40C057), Color(0xFF2F9E44)],
+          valueSize: sensorValueSize,
         ),
-        const SizedBox(height: 10),
-        _wideStatCard(
+        _colorStatCard(
           title: 'Luminance',
           value: '${reading.luminance.toStringAsFixed(0)} lux',
-          note: 'Light intensity inside cleanroom',
+          note: 'Light intensity',
           icon: Icons.wb_sunny_outlined,
-          color: const Color(0xFFF59F00),
-          isSmallScreen: isSmallScreen,
+          colors: const [Color(0xFFFAB005), Color(0xFFF59F00)],
+          valueSize: sensorValueSize - 2,
         ),
       ],
     );
@@ -375,12 +358,10 @@ class DashboardPage extends StatelessWidget {
     required String note,
     required IconData icon,
     required List<Color> colors,
-    required double height,
     required double valueSize,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
-      height: height,
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: colors,
@@ -426,66 +407,6 @@ class DashboardPage extends StatelessWidget {
               color: Colors.white70,
               fontSize: 11,
               height: 1.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _wideStatCard({
-    required String title,
-    required String value,
-    required String note,
-    required IconData icon,
-    required Color color,
-    required bool isSmallScreen,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: Colors.white.withValues(alpha: 0.20),
-            child: Icon(icon, color: Colors.white),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isSmallScreen ? 24 : 28,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  note,
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: isSmallScreen ? 10 : 11,
-                  ),
-                ),
-              ],
             ),
           ),
         ],
