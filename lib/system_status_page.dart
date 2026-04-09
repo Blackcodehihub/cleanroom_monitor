@@ -56,6 +56,28 @@ class SystemStatusPage extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               _sectionCard(
+                title: 'Lighting Control State',
+                subtitle: 'Luminance schedule and override information',
+                children: [
+                  _infoRow('Override Mode', service.overrideModeText),
+                  _divider(),
+                  _infoRow('Current Light Status', service.lightStatusText),
+                  _divider(),
+                  _infoRow(
+                    'Schedule',
+                    '${service.thresholds.lightOnMinutes} min ON / ${service.thresholds.lightOffMinutes} min OFF',
+                  ),
+                  _divider(),
+                  _infoRow(
+                    'Remaining Cycle Time',
+                    service.thresholds.overrideMode == LightOverrideMode.auto
+                        ? '${service.minutesRemainingInLightCycle} min'
+                        : '--',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              _sectionCard(
                 title: 'Backend & Services',
                 subtitle: 'Current software integration state',
                 children: const [
@@ -97,7 +119,7 @@ class SystemStatusPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -107,7 +129,7 @@ class SystemStatusPage extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 28,
-            backgroundColor: statusColor.withValues(alpha: 0.12),
+            backgroundColor: statusColor.withOpacity(0.12),
             child: Icon(
               online ? Icons.verified_user_outlined : Icons.portable_wifi_off,
               color: statusColor,
@@ -167,7 +189,7 @@ class SystemStatusPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -234,7 +256,7 @@ class SystemStatusPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Divider(
         height: 1,
-        color: Colors.black.withValues(alpha: 0.08),
+        color: Colors.black.withOpacity(0.08),
       ),
     );
   }

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'sign_in_page.dart';
-import 'threshold_settings_page.dart';
-import 'notifications_page.dart';
 import 'device_info_page.dart';
 import 'system_status_page.dart';
+import 'profile_details_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -36,98 +35,73 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ProfileDetailsPage(),
                   ),
-                ],
-              ),
-              child: const Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Color(0xFFEAF6EC),
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: primaryGreen,
-                      size: 30,
+                );
+              },
+              borderRadius: BorderRadius.circular(24),
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Prototype User',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Cleanroom operator access',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.black54,
-                          ),
-                        ),
-                      ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 28,
+                      backgroundColor: Color(0xFFEAF6EC),
+                      child: Icon(
+                        Icons.person_rounded,
+                        color: primaryGreen,
+                        size: 30,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 14),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Prototype User',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Cleanroom operator access',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.grey.shade500,
+                    ),
+                  ],
+                ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            _settingTile(
-              context: context,
-              icon: Icons.tune_rounded,
-              title: 'Threshold Settings',
-              subtitle:
-                  'Configure PM2.5, temperature, humidity, and luminance limits',
-              badge: 'Edit',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ThresholdSettingsPage(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            _settingTile(
-              context: context,
-              icon: Icons.notifications_active_outlined,
-              title: 'Notifications',
-              subtitle: 'Manage warnings and alert preferences',
-              badge: 'On',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsPage(),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 10),
-
             _settingTile(
               context: context,
               icon: Icons.memory_rounded,
@@ -143,9 +117,7 @@ class SettingsPage extends StatelessWidget {
                 );
               },
             ),
-
             const SizedBox(height: 10),
-
             _settingTile(
               context: context,
               icon: Icons.verified_user_outlined,
@@ -161,9 +133,7 @@ class SettingsPage extends StatelessWidget {
                 );
               },
             ),
-
             const SizedBox(height: 24),
-
             SizedBox(
               height: 56,
               child: ElevatedButton.icon(
@@ -217,7 +187,7 @@ class SettingsPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -227,7 +197,7 @@ class SettingsPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 21,
-              backgroundColor: primaryGreen.withValues(alpha: 0.10),
+              backgroundColor: primaryGreen.withOpacity(0.10),
               child: Icon(icon, color: primaryGreen),
             ),
             const SizedBox(width: 12),

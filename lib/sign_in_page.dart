@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'sign_up_page.dart';
+import 'forgot_password_page.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -101,7 +102,7 @@ class _SignInPageState extends State<SignInPage> {
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withOpacity(0.05),
                       blurRadius: 18,
                       offset: const Offset(0, 6),
                     ),
@@ -184,60 +185,69 @@ class _SignInPageState extends State<SignInPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-
-                    // Responsive fix for overflow
-                    Wrap(
-                      alignment: WrapAlignment.spaceBetween,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      runSpacing: 6,
-                      spacing: 8,
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Transform.scale(
-                              scale: 0.95,
-                              child: Checkbox(
-                                value: rememberMe,
-                                activeColor: primaryGreen,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(5),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Transform.scale(
+                                scale: 0.95,
+                                child: Checkbox(
+                                  value: rememberMe,
+                                  activeColor: primaryGreen,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      rememberMe = value ?? false;
+                                    });
+                                  },
                                 ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    rememberMe = value ?? false;
-                                  });
-                                },
                               ),
-                            ),
-                            const Text(
-                              'Remember Me',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.black87,
+                              const Expanded(
+                                child: Text(
+                                  'Remember Me',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 10),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordPage(),
+                              ),
+                            );
+                          },
                           style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            foregroundColor: primaryGreen,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 6,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                           ),
                           child: const Text(
                             'Forgot Password?',
                             style: TextStyle(
-                              color: primaryGreen,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
@@ -250,7 +260,7 @@ class _SignInPageState extends State<SignInPage> {
                           borderRadius: BorderRadius.circular(18),
                           boxShadow: [
                             BoxShadow(
-                              color: primaryGreen.withValues(alpha: 0.25),
+                              color: primaryGreen.withOpacity(0.25),
                               blurRadius: 14,
                               offset: const Offset(0, 8),
                             ),
@@ -346,7 +356,7 @@ class _SignInPageState extends State<SignInPage> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: primaryGreen.withValues(alpha: 0.10),
+                  color: primaryGreen.withOpacity(0.10),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Text(
@@ -403,7 +413,7 @@ class _SocialCircle extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -433,7 +443,7 @@ class _SocialTextCircle extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'alerts_page.dart';
 import 'history_page.dart';
+import 'threshold_settings_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -18,6 +19,7 @@ class _HomePageState extends State<HomePage> {
     const DashboardPage(),
     const AlertsPage(),
     const HistoryPage(),
+    const ThresholdSettingsPage(),
     const SettingsPage(),
   ];
 
@@ -39,45 +41,65 @@ class _HomePageState extends State<HomePage> {
           borderRadius: BorderRadius.circular(26),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: NavigationBar(
-          height: 68,
-          backgroundColor: Colors.transparent,
-          indicatorColor: primaryGreen.withValues(alpha: 0.12),
-          selectedIndex: currentIndex,
-          onDestinationSelected: (index) {
-            setState(() {
-              currentIndex = index;
-            });
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded, color: primaryGreen),
-              label: 'Home',
+        child: NavigationBarTheme(
+          data: NavigationBarThemeData(
+            labelTextStyle: WidgetStateProperty.resolveWith<TextStyle>(
+              (states) {
+                final bool selected = states.contains(WidgetState.selected);
+                return TextStyle(
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? primaryGreen : Colors.black87,
+                );
+              },
             ),
-            NavigationDestination(
-              icon: Icon(Icons.notifications_none),
-              selectedIcon:
-                  Icon(Icons.notifications_active, color: primaryGreen),
-              label: 'Alerts',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              selectedIcon: Icon(Icons.history, color: primaryGreen),
-              label: 'History',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: primaryGreen),
-              label: 'Profile',
-            ),
-          ],
+          ),
+          child: NavigationBar(
+            height: 72,
+            backgroundColor: Colors.transparent,
+            indicatorColor: primaryGreen.withOpacity(0.12),
+            selectedIndex: currentIndex,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            onDestinationSelected: (index) {
+              setState(() {
+                currentIndex = index;
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded, color: primaryGreen),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.notifications_none),
+                selectedIcon:
+                    Icon(Icons.notifications_active, color: primaryGreen),
+                label: 'Alerts',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history, color: primaryGreen),
+                label: 'History',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.tune_outlined),
+                selectedIcon: Icon(Icons.tune, color: primaryGreen),
+                label: 'Limits',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person, color: primaryGreen),
+                label: 'Profile',
+              ),
+            ],
+          ),
         ),
       ),
     );

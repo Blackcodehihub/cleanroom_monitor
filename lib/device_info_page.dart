@@ -107,6 +107,10 @@ class DeviceInformationPage extends StatelessWidget {
                     '${reading.luminance.toStringAsFixed(0)} lux',
                   ),
                   _divider(),
+                  _infoRow('Light Mode', service.overrideModeText),
+                  _divider(),
+                  _infoRow('Light Status', service.lightStatusText),
+                  _divider(),
                   _infoRow(
                     'System Status',
                     reading.status,
@@ -119,9 +123,17 @@ class DeviceInformationPage extends StatelessWidget {
                 title: 'Network & System',
                 subtitle: 'Basic environment and deployment details',
                 children: [
-                  _infoRow('Wi-Fi Status', reading.online ? 'Connected' : 'Disconnected'),
+                  _infoRow(
+                    'Wi-Fi Status',
+                    reading.online ? 'Connected' : 'Disconnected',
+                  ),
                   _divider(),
                   _infoRow('Monitoring Mode', 'Prototype / Mock Data'),
+                  _divider(),
+                  _infoRow(
+                    'Light Schedule',
+                    '${service.thresholds.lightOnMinutes} min ON / ${service.thresholds.lightOffMinutes} min OFF',
+                  ),
                   _divider(),
                   _infoRow('Backend Integration', 'Pending'),
                   _divider(),
@@ -140,7 +152,7 @@ class DeviceInformationPage extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: primaryGreen.withValues(alpha: 0.10),
+        color: primaryGreen.withOpacity(0.10),
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
@@ -185,7 +197,7 @@ class DeviceInformationPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -252,7 +264,7 @@ class DeviceInformationPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Divider(
         height: 1,
-        color: Colors.black.withValues(alpha: 0.08),
+        color: Colors.black.withOpacity(0.08),
       ),
     );
   }

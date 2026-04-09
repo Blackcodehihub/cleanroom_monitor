@@ -40,6 +40,8 @@ class DashboardPage extends StatelessWidget {
                     heroTempSize: heroTempSize,
                     isSmallScreen: isSmallScreen,
                   ),
+                  const SizedBox(height: 14),
+                  _lightControlCard(service),
                   const SizedBox(height: 16),
                   const Text(
                     'Environmental Overview',
@@ -88,60 +90,36 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _buildTopBar(bool online) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const Text(
+          'Welcome back',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.black45,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Row(
           children: [
             const Text(
-              'Welcome back',
+              'Cleanroom Operator',
               style: TextStyle(
-                fontSize: 12,
-                color: Colors.black45,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 2),
-            Row(
-              children: [
-                const Text(
-                  'Cleanroom Operator',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '●',
-                  style: TextStyle(
-                    color: online ? primaryGreen : Colors.red,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+            const SizedBox(width: 6),
+            Text(
+              '●',
+              style: TextStyle(
+                color: online ? primaryGreen : Colors.red,
+                fontSize: 14,
+              ),
             ),
           ],
-        ),
-        const Spacer(),
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.notifications_none_rounded,
-            color: primaryGreen,
-          ),
         ),
       ],
     );
@@ -162,7 +140,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -217,7 +195,7 @@ class DashboardPage extends StatelessWidget {
                 width: isSmallScreen ? 74 : 84,
                 height: isSmallScreen ? 74 : 84,
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.10),
+                  color: statusColor.withOpacity(0.10),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -255,7 +233,7 @@ class DashboardPage extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.20),
+                    color: Colors.white.withOpacity(0.20),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Text(
@@ -268,6 +246,104 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lightControlCard(MockSensorService service) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Light Control',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Mode: ${service.overrideModeText} • Status: ${service.lightStatusText}',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _lightMiniBox(
+                  'ON Time',
+                  '${service.thresholds.lightOnMinutes} min',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _lightMiniBox(
+                  'OFF Time',
+                  '${service.thresholds.lightOffMinutes} min',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _lightMiniBox(
+                  'Remaining',
+                  service.thresholds.overrideMode == LightOverrideMode.auto
+                      ? '${service.minutesRemainingInLightCycle} min'
+                      : '--',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lightMiniBox(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F6F7),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.black54,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
             ),
           ),
         ],
@@ -335,7 +411,7 @@ class DashboardPage extends StatelessWidget {
         _colorStatCard(
           title: 'Temperature',
           value: '${reading.temperature.toStringAsFixed(1)}°C',
-          note: 'Normal range: 20°C - 24°C',
+          note: 'Normal range configured in thresholds',
           icon: Icons.thermostat_rounded,
           colors: const [Color(0xFF40C057), Color(0xFF2F9E44)],
           valueSize: sensorValueSize,
@@ -343,7 +419,7 @@ class DashboardPage extends StatelessWidget {
         _colorStatCard(
           title: 'Luminance',
           value: '${reading.luminance.toStringAsFixed(0)} lux',
-          note: 'Light intensity',
+          note: 'Based on timer / override mode',
           icon: Icons.wb_sunny_outlined,
           colors: const [Color(0xFFFAB005), Color(0xFFF59F00)],
           valueSize: sensorValueSize - 2,
@@ -375,7 +451,7 @@ class DashboardPage extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 14,
-            backgroundColor: Colors.white.withValues(alpha: 0.22),
+            backgroundColor: Colors.white.withOpacity(0.22),
             child: Icon(icon, color: Colors.white, size: 16),
           ),
           const Spacer(),
@@ -426,7 +502,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -507,7 +583,7 @@ class DashboardPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withOpacity(0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -519,7 +595,7 @@ class DashboardPage extends StatelessWidget {
                     radius: 18,
                     backgroundColor:
                         (alert.isWarning ? Colors.orange : primaryGreen)
-                            .withValues(alpha: 0.12),
+                            .withOpacity(0.12),
                     child: Icon(
                       alert.isWarning
                           ? Icons.warning_amber_rounded
