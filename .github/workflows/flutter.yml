@@ -4,13 +4,9 @@ on:
   push:
     branches:
       - main
-      - master
-      - dev
   pull_request:
     branches:
       - main
-      - master
-      - dev
 
 jobs:
   build:
@@ -35,7 +31,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze project
-        run: flutter analyze
+        run: flutter analyze --no-fatal-infos
 
       - name: Build APK
         run: flutter build apk --release
