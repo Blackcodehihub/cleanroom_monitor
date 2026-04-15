@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
               setState(() {
                 currentIndex = index;
               });
-            },
+            },  
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.home_outlined),
