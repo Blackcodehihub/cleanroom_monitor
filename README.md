@@ -1,16 +1,17 @@
-# cleanroom_monitor
+# Cleanroom Monitor App
 
-A new Flutter project.
+A Flutter-based mobile application for monitoring cleanroom environmental conditions.
 
-## Getting Started
+## Features
+- Real-time sensor monitoring
+- Alerts system
+- Threshold settings
+- Profile management
 
-This project is a starting point for a Flutter application.
+## CI Pipeline
+This project uses **GitHub Actions** to:
+- Build APK automatically
+- Run on every push
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Note
+This is a mobile application. GitHub Pages is used only for project documentation.
