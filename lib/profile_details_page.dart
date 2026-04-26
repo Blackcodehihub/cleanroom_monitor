@@ -18,6 +18,8 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
       TextEditingController(text: 'Prototype User');
   final TextEditingController emailController =
       TextEditingController(text: 'prototype.user@email.com');
+  final TextEditingController contactController =
+      TextEditingController(text: '09123456789');
 
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
@@ -26,6 +28,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
   void dispose() {
     fullNameController.dispose();
     emailController.dispose();
+    contactController.dispose();
     super.dispose();
   }
 
@@ -46,10 +49,21 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
   void _saveChanges() {
     final fullName = fullNameController.text.trim();
     final email = emailController.text.trim();
+    final contact = contactController.text.trim();
 
-    if (fullName.isEmpty || email.isEmpty) {
+    if (fullName.isEmpty || email.isEmpty || contact.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Full name and email are required')),
+        const SnackBar(
+          content: Text('Full name, email, and contact number are required'),
+        ),
+      );
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
       );
       return;
     }
@@ -57,6 +71,12 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Profile changes saved successfully')),
     );
+
+    Navigator.pop(context);
+  }
+
+  void _discardChanges() {
+    Navigator.pop(context);
   }
 
   @override
@@ -65,7 +85,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
       backgroundColor: softBg,
       appBar: AppBar(
         title: const Text(
-          'Profile Details',
+          'Edit Profile',
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         centerTitle: true,
@@ -76,11 +96,11 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
         child: Column(
           children: [
-            _profileCard(),
+            _profilePhotoCard(),
             const SizedBox(height: 16),
             _sectionCard(
               title: 'Personal Information',
-              subtitle: 'Update your personal information',
+              subtitle: 'Update your profile details',
               child: Column(
                 children: [
                   _fieldLabel('Full Name'),
@@ -99,10 +119,20 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                     prefixIcon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
                   ),
+                  const SizedBox(height: 16),
+                  _fieldLabel('Contact Number'),
+                  const SizedBox(height: 8),
+                  _textField(
+                    controller: contactController,
+                    hintText: 'Enter your contact number',
+                    prefixIcon: Icons.phone_outlined,
+                    keyboardType: TextInputType.phone,
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 22),
+
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -114,7 +144,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: [
                     BoxShadow(
-                      color: primaryGreen.withOpacity(0.22),
+                      color: primaryGreen.withValues(alpha: 0.22),
                       blurRadius: 14,
                       offset: const Offset(0, 8),
                     ),
@@ -141,13 +171,41 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 12),
+
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: OutlinedButton.icon(
+                onPressed: _discardChanges,
+                icon: const Icon(Icons.arrow_back_rounded),
+                label: const Text(
+                  'Back / Discard Changes',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black87,
+                  side: BorderSide(
+                    color: Colors.grey.shade300,
+                    width: 1.2,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _profileCard() {
+  Widget _profilePhotoCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -156,7 +214,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -164,41 +222,67 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 44,
-            backgroundColor: const Color(0xFFEAF6EC),
-            backgroundImage:
-                selectedImage != null ? FileImage(selectedImage!) : null,
-            child: selectedImage == null
-                ? const Icon(
-                    Icons.person_rounded,
-                    color: primaryGreen,
-                    size: 42,
-                  )
-                : null,
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: const Color(0xFFEAF6EC),
+                backgroundImage:
+                    selectedImage != null ? FileImage(selectedImage!) : null,
+                child: selectedImage == null
+                    ? const Icon(
+                        Icons.person_rounded,
+                        color: primaryGreen,
+                        size: 46,
+                      )
+                    : null,
+              ),
+              Positioned(
+                bottom: 2,
+                right: 2,
+                child: InkWell(
+                  onTap: _pickImage,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: primaryGreen,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Text(
-            fullNameController.text.isEmpty
+            fullNameController.text.trim().isEmpty
                 ? 'Prototype User'
-                : fullNameController.text,
+                : fullNameController.text.trim(),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w900,
               color: Colors.black87,
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Text(
-            emailController.text.isEmpty
+            emailController.text.trim().isEmpty
                 ? 'prototype.user@email.com'
-                : emailController.text,
+                : emailController.text.trim(),
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
               color: Colors.black54,
             ),
-            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 14),
           OutlinedButton.icon(
@@ -238,7 +322,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

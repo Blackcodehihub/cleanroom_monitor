@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'sign_in_page.dart';
 import 'device_info_page.dart';
-import 'system_status_page.dart';
 import 'profile_details_page.dart';
+import 'profile_service.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -12,160 +12,188 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: softBg,
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-          children: [
-            const Text(
-              'Profile',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Manage your account and app preferences',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 18),
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ProfileDetailsPage(),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(24),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 28,
-                      backgroundColor: Color(0xFFEAF6EC),
-                      child: Icon(
-                        Icons.person_rounded,
-                        color: primaryGreen,
-                        size: 30,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Prototype User',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Cleanroom operator access',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      color: Colors.grey.shade500,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _settingTile(
-              context: context,
-              icon: Icons.memory_rounded,
-              title: 'Device Information',
-              subtitle: 'View connected device and sensor details',
-              badge: '2',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const DeviceInformationPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            _settingTile(
-              context: context,
-              icon: Icons.verified_user_outlined,
-              title: 'System Status',
-              subtitle: 'Prototype mode and monitoring environment',
-              badge: 'Live',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SystemStatusPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 56,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const SignInPage(),
-                    ),
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text(
-                  'Logout',
+    final profile = ProfileService.instance;
+
+    return AnimatedBuilder(
+      animation: profile,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: softBg,
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+              children: [
+                const Text(
+                  'Profile',
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                const SizedBox(height: 4),
+                const Text(
+                  'Manage your account and app preferences',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
                   ),
                 ),
-              ),
+                const SizedBox(height: 18),
+
+                // PROFILE CARD
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 46,
+                        backgroundColor: const Color(0xFFEAF6EC),
+                        backgroundImage: profile.profileImage != null
+                            ? FileImage(profile.profileImage!)
+                            : null,
+                        child: profile.profileImage == null
+                            ? const Icon(
+                                Icons.person_rounded,
+                                color: primaryGreen,
+                                size: 46,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        profile.fullName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        profile.email,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        profile.contactNumber,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black54,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // EDIT PROFILE BUTTON
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProfileDetailsPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit_rounded),
+                          label: const Text(
+                            'Edit Profile',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryGreen,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // DEVICE INFORMATION (ONLY SETTINGS LEFT)
+                _settingTile(
+                  context: context,
+                  icon: Icons.memory_rounded,
+                  title: 'Device Information',
+                  subtitle: 'View connected device and sensor details',
+                  badge: '2',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DeviceInformationPage(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // LOGOUT BUTTON
+                SizedBox(
+                  height: 56,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SignInPage(),
+                        ),
+                        (route) => false,
+                      );
+                    },
+                    icon: const Icon(Icons.logout_rounded),
+                    label: const Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -187,7 +215,7 @@ class SettingsPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -197,7 +225,7 @@ class SettingsPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 21,
-              backgroundColor: primaryGreen.withOpacity(0.10),
+              backgroundColor: primaryGreen.withValues(alpha: 0.10),
               child: Icon(icon, color: primaryGreen),
             ),
             const SizedBox(width: 12),

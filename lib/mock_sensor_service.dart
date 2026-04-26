@@ -25,13 +25,15 @@ class SensorReading {
     final service = MockSensorService.instance;
     final t = service.thresholds;
 
-    final bool critical = pm25 > t.pm25Max ||
+    final bool critical =
+        pm25 > t.pm25Max ||
         temperature < t.tempMin ||
         temperature > t.tempMax ||
         humidity < t.humidityMin ||
         humidity > t.humidityMax;
 
-    final bool warning = (pm25 >= (t.pm25Max - 10) && pm25 <= t.pm25Max) ||
+    final bool warning =
+        (pm25 >= (t.pm25Max - 10) && pm25 <= t.pm25Max) ||
         (temperature >= t.tempMin && temperature <= t.tempMin + 0.5) ||
         (temperature <= t.tempMax && temperature >= t.tempMax - 0.5) ||
         (humidity >= t.humidityMin && humidity <= t.humidityMin + 2) ||
@@ -57,11 +59,7 @@ class AlertItem {
   });
 }
 
-enum LightOverrideMode {
-  auto,
-  forceOn,
-  forceOff,
-}
+enum LightOverrideMode { auto, forceOn, forceOff }
 
 class ThresholdSettingsData {
   double pm25Max;
@@ -85,8 +83,67 @@ class ThresholdSettingsData {
   });
 }
 
+class CleanroomDevice {
+  final String deviceId;
+  final String deviceName;
+  final String espUsername;
+  final String espPassword;
+
+  CleanroomDevice({
+    required this.deviceId,
+    required this.deviceName,
+    required this.espUsername,
+    required this.espPassword,
+  });
+}
+
+class CleanroomRoom {
+  final String roomId;
+  String roomName;
+  final List<CleanroomDevice> devices;
+  String? selectedDeviceId;
+
+  CleanroomRoom({
+    required this.roomId,
+    required this.roomName,
+    required this.devices,
+    this.selectedDeviceId,
+  });
+}
+
 class MockSensorService extends ChangeNotifier {
   MockSensorService._internal() {
+    _rooms.addAll([
+      CleanroomRoom(
+        roomId: 'room1',
+        roomName: 'Room 1',
+        selectedDeviceId: 'deviceid1',
+        devices: [
+          CleanroomDevice(
+            deviceId: 'deviceid1',
+            deviceName: 'ESP32 Cleanroom Main',
+            espUsername: 'room1_admin',
+            espPassword: 'room1_password',
+          ),
+        ],
+      ),
+      CleanroomRoom(
+        roomId: 'room2',
+        roomName: 'Room 2',
+        selectedDeviceId: 'deviceid2',
+        devices: [
+          CleanroomDevice(
+            deviceId: 'deviceid2',
+            deviceName: 'ESP32 Room 2 Node',
+            espUsername: 'room2_admin',
+            espPassword: 'room2_password',
+          ),
+        ],
+      ),
+    ]);
+
+    _selectedRoomId = 'room1';
+
     _currentReading = SensorReading(
       pm25: 18.0,
       temperature: 22.0,
@@ -120,6 +177,9 @@ class MockSensorService extends ChangeNotifier {
   final List<SensorReading> _history = [];
   final List<AlertItem> _alerts = [];
 
+  final List<CleanroomRoom> _rooms = [];
+  String _selectedRoomId = 'room1';
+
   final ThresholdSettingsData _thresholds = ThresholdSettingsData(
     pm25Max: 35,
     tempMin: 20,
@@ -138,6 +198,30 @@ class MockSensorService extends ChangeNotifier {
   List<SensorReading> get history => List.unmodifiable(_history);
   List<AlertItem> get alerts => List.unmodifiable(_alerts);
   ThresholdSettingsData get thresholds => _thresholds;
+
+  List<CleanroomRoom> get rooms => List.unmodifiable(_rooms);
+
+  CleanroomRoom get selectedRoom {
+    return _rooms.firstWhere(
+      (room) => room.roomId == _selectedRoomId,
+      orElse: () => _rooms.first,
+    );
+  }
+
+  CleanroomDevice? get selectedDevice {
+    final room = selectedRoom;
+
+    if (room.devices.isEmpty) return null;
+
+    return room.devices.firstWhere(
+      (device) => device.deviceId == room.selectedDeviceId,
+      orElse: () => room.devices.first,
+    );
+  }
+
+  String get selectedRoomId => selectedRoom.roomId;
+  String get selectedRoomName => selectedRoom.roomName;
+  String get selectedDeviceId => selectedDevice?.deviceId ?? 'No Device';
 
   bool get isLightOn {
     switch (_thresholds.overrideMode) {
@@ -177,13 +261,134 @@ class MockSensorService extends ChangeNotifier {
   }
 
   int get currentPhaseDurationMinutes {
-    return _autoLightOn ? _thresholds.lightOnMinutes : _thresholds.lightOffMinutes;
+    return _autoLightOn
+        ? _thresholds.lightOnMinutes
+        : _thresholds.lightOffMinutes;
   }
 
   int get minutesRemainingInLightCycle {
     if (_thresholds.overrideMode != LightOverrideMode.auto) return 0;
     final remaining = currentPhaseDurationMinutes - currentPhaseMinutes;
     return remaining < 0 ? 0 : remaining;
+  }
+
+  void selectRoom(String roomId) {
+    _selectedRoomId = roomId;
+    _addAlert(
+      title: 'Room Changed',
+      message: 'Now viewing data from ${selectedRoom.roomName}.',
+      isWarning: false,
+    );
+    notifyListeners();
+  }
+
+  void selectDevice(String deviceId) {
+    final room = selectedRoom;
+    room.selectedDeviceId = deviceId;
+
+    _addAlert(
+      title: 'Device Changed',
+      message: 'Now viewing data from device $deviceId.',
+      isWarning: false,
+    );
+
+    notifyListeners();
+  }
+
+  void addRoom(String roomName) {
+    final cleanName = roomName.trim();
+    if (cleanName.isEmpty) return;
+
+    final newRoomNumber = _rooms.length + 1;
+    final roomId = 'room$newRoomNumber';
+
+    _rooms.add(CleanroomRoom(roomId: roomId, roomName: cleanName, devices: []));
+
+    _selectedRoomId = roomId;
+
+    _addAlert(
+      title: 'Room Added',
+      message: '$cleanName has been added to this account.',
+      isWarning: false,
+    );
+
+    notifyListeners();
+  }
+
+  void deleteSelectedRoom() {
+    if (_rooms.length <= 1) return;
+
+    final removedRoomName = selectedRoom.roomName;
+    _rooms.removeWhere((room) => room.roomId == _selectedRoomId);
+    _selectedRoomId = _rooms.first.roomId;
+
+    _addAlert(
+      title: 'Room Deleted',
+      message: '$removedRoomName was removed from the account.',
+      isWarning: true,
+    );
+
+    notifyListeners();
+  }
+
+  void addDeviceToSelectedRoom({
+    required String deviceId,
+    required String deviceName,
+    required String username,
+    required String password,
+  }) {
+    final cleanDeviceId = deviceId.trim();
+    final cleanDeviceName = deviceName.trim();
+    final cleanUsername = username.trim();
+    final cleanPassword = password.trim();
+
+    if (cleanDeviceId.isEmpty ||
+        cleanDeviceName.isEmpty ||
+        cleanUsername.isEmpty ||
+        cleanPassword.isEmpty) {
+      return;
+    }
+
+    final room = selectedRoom;
+
+    room.devices.add(
+      CleanroomDevice(
+        deviceId: cleanDeviceId,
+        deviceName: cleanDeviceName,
+        espUsername: cleanUsername,
+        espPassword: cleanPassword,
+      ),
+    );
+
+    room.selectedDeviceId = cleanDeviceId;
+
+    _addAlert(
+      title: 'Device Added',
+      message: '$cleanDeviceName has been added to ${room.roomName}.',
+      isWarning: false,
+    );
+
+    notifyListeners();
+  }
+
+  void deleteSelectedDevice() {
+    final room = selectedRoom;
+    final device = selectedDevice;
+
+    if (device == null) return;
+
+    room.devices.removeWhere((d) => d.deviceId == device.deviceId);
+    room.selectedDeviceId = room.devices.isNotEmpty
+        ? room.devices.first.deviceId
+        : null;
+
+    _addAlert(
+      title: 'Device Deleted',
+      message: '${device.deviceName} was removed from ${room.roomName}.',
+      isWarning: true,
+    );
+
+    notifyListeners();
   }
 
   void _startSimulation() {
@@ -234,8 +439,9 @@ class MockSensorService extends ChangeNotifier {
     if (_thresholds.overrideMode != LightOverrideMode.auto) return;
 
     final elapsedMinutes = currentPhaseMinutes;
-    final phaseDuration =
-        _autoLightOn ? _thresholds.lightOnMinutes : _thresholds.lightOffMinutes;
+    final phaseDuration = _autoLightOn
+        ? _thresholds.lightOnMinutes
+        : _thresholds.lightOffMinutes;
 
     if (elapsedMinutes >= phaseDuration) {
       _autoLightOn = !_autoLightOn;
@@ -255,17 +461,27 @@ class MockSensorService extends ChangeNotifier {
     _updateLightCycle();
 
     final double nextPm25 = _generateValue(_currentReading.pm25, 10, 45, 4.0);
-    final double nextTemp =
-        _generateValue(_currentReading.temperature, 19, 26, 0.7);
-    final double nextHumidity =
-        _generateValue(_currentReading.humidity, 35, 65, 2.0);
+    final double nextTemp = _generateValue(
+      _currentReading.temperature,
+      19,
+      26,
+      0.7,
+    );
+    final double nextHumidity = _generateValue(
+      _currentReading.humidity,
+      35,
+      65,
+      2.0,
+    );
 
     final bool lightOn = isLightOn;
     final double nextLuminance = lightOn
         ? _generateValue(_currentReading.luminance, 7000, 12000, 900)
         : _generateValue(_currentReading.luminance, 200, 2500, 400);
 
-    final bool online = _random.nextInt(100) > 3;
+    final bool online = selectedDevice == null
+        ? false
+        : _random.nextInt(100) > 3;
 
     _currentReading = SensorReading(
       pm25: double.parse(nextPm25.toStringAsFixed(1)),
@@ -304,7 +520,8 @@ class MockSensorService extends ChangeNotifier {
     if (!reading.online) {
       _addAlert(
         title: 'Device Offline',
-        message: 'The cleanroom device is temporarily disconnected.',
+        message:
+            'The selected ESP32 device is temporarily disconnected or unavailable.',
         isWarning: true,
       );
       return;
@@ -339,8 +556,7 @@ class MockSensorService extends ChangeNotifier {
         reading.humidity > _thresholds.humidityMax) {
       _addAlert(
         title: 'Humidity Alert',
-        message:
-            'Humidity is ${reading.humidity}% and outside the safe range.',
+        message: 'Humidity is ${reading.humidity}% and outside the safe range.',
         isWarning: true,
       );
     }
