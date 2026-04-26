@@ -25,15 +25,13 @@ class SensorReading {
     final service = MockSensorService.instance;
     final t = service.thresholds;
 
-    final bool critical =
-        pm25 > t.pm25Max ||
+    final bool critical = pm25 > t.pm25Max ||
         temperature < t.tempMin ||
         temperature > t.tempMax ||
         humidity < t.humidityMin ||
         humidity > t.humidityMax;
 
-    final bool warning =
-        (pm25 >= (t.pm25Max - 10) && pm25 <= t.pm25Max) ||
+    final bool warning = (pm25 >= (t.pm25Max - 10) && pm25 <= t.pm25Max) ||
         (temperature >= t.tempMin && temperature <= t.tempMin + 0.5) ||
         (temperature <= t.tempMax && temperature >= t.tempMax - 0.5) ||
         (humidity >= t.humidityMin && humidity <= t.humidityMin + 2) ||
@@ -59,7 +57,11 @@ class AlertItem {
   });
 }
 
-enum LightOverrideMode { auto, forceOn, forceOff }
+enum LightOverrideMode {
+  auto,
+  forceOn,
+  forceOff,
+}
 
 class ThresholdSettingsData {
   double pm25Max;
@@ -70,6 +72,7 @@ class ThresholdSettingsData {
   int lightOnMinutes;
   int lightOffMinutes;
   LightOverrideMode overrideMode;
+  String notificationNumber;
 
   ThresholdSettingsData({
     required this.pm25Max,
@@ -80,6 +83,7 @@ class ThresholdSettingsData {
     required this.lightOnMinutes,
     required this.lightOffMinutes,
     required this.overrideMode,
+    required this.notificationNumber,
   });
 }
 
@@ -189,6 +193,7 @@ class MockSensorService extends ChangeNotifier {
     lightOnMinutes: 12,
     lightOffMinutes: 6,
     overrideMode: LightOverrideMode.auto,
+    notificationNumber: '09123456789',
   );
 
   DateTime _lightCycleStartedAt = DateTime.now();
@@ -198,7 +203,6 @@ class MockSensorService extends ChangeNotifier {
   List<SensorReading> get history => List.unmodifiable(_history);
   List<AlertItem> get alerts => List.unmodifiable(_alerts);
   ThresholdSettingsData get thresholds => _thresholds;
-
   List<CleanroomRoom> get rooms => List.unmodifiable(_rooms);
 
   CleanroomRoom get selectedRoom {
@@ -238,9 +242,11 @@ class MockSensorService extends ChangeNotifier {
     if (_thresholds.overrideMode == LightOverrideMode.forceOn) {
       return 'FORCED ON';
     }
+
     if (_thresholds.overrideMode == LightOverrideMode.forceOff) {
       return 'FORCED OFF';
     }
+
     return isLightOn ? 'AUTO ON' : 'AUTO OFF';
   }
 
@@ -268,17 +274,20 @@ class MockSensorService extends ChangeNotifier {
 
   int get minutesRemainingInLightCycle {
     if (_thresholds.overrideMode != LightOverrideMode.auto) return 0;
+
     final remaining = currentPhaseDurationMinutes - currentPhaseMinutes;
     return remaining < 0 ? 0 : remaining;
   }
 
   void selectRoom(String roomId) {
     _selectedRoomId = roomId;
+
     _addAlert(
       title: 'Room Changed',
       message: 'Now viewing data from ${selectedRoom.roomName}.',
       isWarning: false,
     );
+
     notifyListeners();
   }
 
@@ -302,7 +311,13 @@ class MockSensorService extends ChangeNotifier {
     final newRoomNumber = _rooms.length + 1;
     final roomId = 'room$newRoomNumber';
 
-    _rooms.add(CleanroomRoom(roomId: roomId, roomName: cleanName, devices: []));
+    _rooms.add(
+      CleanroomRoom(
+        roomId: roomId,
+        roomName: cleanName,
+        devices: [],
+      ),
+    );
 
     _selectedRoomId = roomId;
 
@@ -378,9 +393,8 @@ class MockSensorService extends ChangeNotifier {
     if (device == null) return;
 
     room.devices.removeWhere((d) => d.deviceId == device.deviceId);
-    room.selectedDeviceId = room.devices.isNotEmpty
-        ? room.devices.first.deviceId
-        : null;
+    room.selectedDeviceId =
+        room.devices.isNotEmpty ? room.devices.first.deviceId : null;
 
     _addAlert(
       title: 'Device Deleted',
@@ -389,13 +403,6 @@ class MockSensorService extends ChangeNotifier {
     );
 
     notifyListeners();
-  }
-
-  void _startSimulation() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _generateNextReading();
-    });
   }
 
   void updateThresholdSettings({
@@ -418,6 +425,19 @@ class MockSensorService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateNotificationNumber(String number) {
+    _thresholds.notificationNumber = number.trim();
+
+    _addAlert(
+      title: 'Notification Number Updated',
+      message:
+          'Alert receiver number changed to ${_thresholds.notificationNumber}.',
+      isWarning: false,
+    );
+
+    notifyListeners();
+  }
+
   void setLightOverride(LightOverrideMode mode) {
     final oldText = overrideModeText;
     _thresholds.overrideMode = mode;
@@ -433,6 +453,14 @@ class MockSensorService extends ChangeNotifier {
     );
 
     notifyListeners();
+  }
+
+  void _startSimulation() {
+    _timer?.cancel();
+
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _generateNextReading();
+    });
   }
 
   void _updateLightCycle() {
@@ -461,27 +489,18 @@ class MockSensorService extends ChangeNotifier {
     _updateLightCycle();
 
     final double nextPm25 = _generateValue(_currentReading.pm25, 10, 45, 4.0);
-    final double nextTemp = _generateValue(
-      _currentReading.temperature,
-      19,
-      26,
-      0.7,
-    );
-    final double nextHumidity = _generateValue(
-      _currentReading.humidity,
-      35,
-      65,
-      2.0,
-    );
+    final double nextTemp =
+        _generateValue(_currentReading.temperature, 19, 26, 0.7);
+    final double nextHumidity =
+        _generateValue(_currentReading.humidity, 35, 65, 2.0);
 
     final bool lightOn = isLightOn;
     final double nextLuminance = lightOn
         ? _generateValue(_currentReading.luminance, 7000, 12000, 900)
         : _generateValue(_currentReading.luminance, 200, 2500, 400);
 
-    final bool online = selectedDevice == null
-        ? false
-        : _random.nextInt(100) > 3;
+    final bool online =
+        selectedDevice == null ? false : _random.nextInt(100) > 3;
 
     _currentReading = SensorReading(
       pm25: double.parse(nextPm25.toStringAsFixed(1)),
@@ -531,13 +550,14 @@ class MockSensorService extends ChangeNotifier {
       _addAlert(
         title: 'PM2.5 Critical',
         message:
-            'PM2.5 reached ${reading.pm25} µg/m³ and exceeded the safe threshold.',
+            'PM2.5 reached ${reading.pm25} µg/m³ and exceeded the safe threshold. Alert receiver: ${_thresholds.notificationNumber}.',
         isWarning: true,
       );
     } else if (reading.pm25 >= (_thresholds.pm25Max - 10)) {
       _addAlert(
         title: 'PM2.5 Warning',
-        message: 'PM2.5 is rising at ${reading.pm25} µg/m³.',
+        message:
+            'PM2.5 is rising at ${reading.pm25} µg/m³. Alert receiver: ${_thresholds.notificationNumber}.',
         isWarning: true,
       );
     }
@@ -547,7 +567,7 @@ class MockSensorService extends ChangeNotifier {
       _addAlert(
         title: 'Temperature Alert',
         message:
-            'Temperature is ${reading.temperature}°C and outside the safe range.',
+            'Temperature is ${reading.temperature}°C and outside the safe range. Alert receiver: ${_thresholds.notificationNumber}.',
         isWarning: true,
       );
     }
@@ -556,7 +576,8 @@ class MockSensorService extends ChangeNotifier {
         reading.humidity > _thresholds.humidityMax) {
       _addAlert(
         title: 'Humidity Alert',
-        message: 'Humidity is ${reading.humidity}% and outside the safe range.',
+        message:
+            'Humidity is ${reading.humidity}% and outside the safe range. Alert receiver: ${_thresholds.notificationNumber}.',
         isWarning: true,
       );
     }
@@ -602,8 +623,10 @@ class MockSensorService extends ChangeNotifier {
     final int hour = dateTime.hour > 12
         ? dateTime.hour - 12
         : (dateTime.hour == 0 ? 12 : dateTime.hour);
+
     final String minute = dateTime.minute.toString().padLeft(2, '0');
     final String period = dateTime.hour >= 12 ? 'PM' : 'AM';
+
     return '$hour:$minute $period';
   }
 

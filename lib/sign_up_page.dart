@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'mock_sensor_service.dart';
+import 'profile_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -10,6 +12,7 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
       TextEditingController();
@@ -25,31 +28,65 @@ class _SignUpPageState extends State<SignUpPage> {
   void dispose() {
     fullNameController.dispose();
     emailController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
   }
 
   void _createAccount() {
-    if (fullNameController.text.trim().isEmpty ||
-        emailController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty ||
-        confirmPasswordController.text.trim().isEmpty) {
+    final fullName = fullNameController.text.trim();
+    final email = emailController.text.trim();
+    final phone = phoneController.text.trim();
+    final password = passwordController.text.trim();
+    final confirmPassword = confirmPasswordController.text.trim();
+
+    if (fullName.isEmpty ||
+        email.isEmpty ||
+        phone.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
       return;
     }
 
-    if (passwordController.text != confirmPasswordController.text) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    if (phone.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid phone number')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match')),
       );
       return;
     }
 
+    MockSensorService.instance.updateNotificationNumber(phone);
+
+    ProfileService.instance.updateProfile(
+      newFullName: fullName,
+      newEmail: email,
+      newContactNumber: phone,
+      newProfileImage: null,
+    );
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Account created successfully')),
+      const SnackBar(
+        content: Text('Account created. Alert receiver number saved.'),
+      ),
     );
 
     Navigator.pop(context);
@@ -103,7 +140,7 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Create your account to access the cleanroom monitoring prototype and live data views.',
+                'Create your account and set your default alert receiver number.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: isSmallScreen ? 13 : 14,
@@ -131,153 +168,69 @@ class _SignUpPageState extends State<SignUpPage> {
                   children: [
                     const _FieldLabel('Full Name'),
                     const SizedBox(height: 8),
-                    TextField(
+                    _textField(
                       controller: fullNameController,
-                      decoration: InputDecoration(
-                        hintText: 'Enter your full name',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        prefixIcon: const Icon(
-                          Icons.person_outline,
-                          color: primaryGreen,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(
-                            color: primaryGreen,
-                            width: 1.3,
-                          ),
-                        ),
-                      ),
+                      hintText: 'Enter your full name',
+                      icon: Icons.person_outline,
                     ),
                     const SizedBox(height: 16),
+
                     const _FieldLabel('Email'),
                     const SizedBox(height: 8),
-                    TextField(
+                    _textField(
                       controller: emailController,
+                      hintText: 'Enter your email',
+                      icon: Icons.email_outlined,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: InputDecoration(
-                        hintText: 'Enter your email',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        prefixIcon: const Icon(
-                          Icons.email_outlined,
-                          color: primaryGreen,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(
-                            color: primaryGreen,
-                            width: 1.3,
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    const _FieldLabel('Phone Number'),
+                    const SizedBox(height: 8),
+                    _textField(
+                      controller: phoneController,
+                      hintText: 'Enter alert receiver number',
+                      icon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'This will be used as the default number for alert notifications.',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black45,
+                        height: 1.35,
                       ),
                     ),
                     const SizedBox(height: 16),
+
                     const _FieldLabel('Password'),
                     const SizedBox(height: 8),
-                    TextField(
+                    _passwordField(
                       controller: passwordController,
+                      hintText: 'Create your password',
                       obscureText: obscurePassword,
-                      decoration: InputDecoration(
-                        hintText: 'Create your password',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: primaryGreen,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              obscurePassword = !obscurePassword;
-                            });
-                          },
-                          icon: Icon(
-                            obscurePassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.black54,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(
-                            color: primaryGreen,
-                            width: 1.3,
-                          ),
-                        ),
-                      ),
+                      onToggle: () {
+                        setState(() {
+                          obscurePassword = !obscurePassword;
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
+
                     const _FieldLabel('Confirm Password'),
                     const SizedBox(height: 8),
-                    TextField(
+                    _passwordField(
                       controller: confirmPasswordController,
+                      hintText: 'Confirm your password',
                       obscureText: obscureConfirmPassword,
-                      decoration: InputDecoration(
-                        hintText: 'Confirm your password',
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        prefixIcon: const Icon(
-                          Icons.lock_outline,
-                          color: primaryGreen,
-                        ),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              obscureConfirmPassword =
-                                  !obscureConfirmPassword;
-                            });
-                          },
-                          icon: Icon(
-                            obscureConfirmPassword
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined,
-                            color: Colors.black54,
-                          ),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                          borderSide: const BorderSide(
-                            color: primaryGreen,
-                            width: 1.3,
-                          ),
-                        ),
-                      ),
+                      onToggle: () {
+                        setState(() {
+                          obscureConfirmPassword = !obscureConfirmPassword;
+                        });
+                      },
                     ),
+
                     const SizedBox(height: 22),
                     SizedBox(
                       width: double.infinity,
@@ -365,6 +318,75 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _textField({
+    required TextEditingController controller,
+    required String hintText,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: _inputDecoration(
+        hintText: hintText,
+        icon: icon,
+      ),
+    );
+  }
+
+  Widget _passwordField({
+    required TextEditingController controller,
+    required String hintText,
+    required bool obscureText,
+    required VoidCallback onToggle,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: _inputDecoration(
+        hintText: hintText,
+        icon: Icons.lock_outline,
+      ).copyWith(
+        suffixIcon: IconButton(
+          onPressed: onToggle,
+          icon: Icon(
+            obscureText
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+            color: Colors.black54,
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String hintText,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      filled: true,
+      fillColor: const Color(0xFFF8F9FA),
+      prefixIcon: Icon(icon, color: primaryGreen),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: primaryGreen,
+          width: 1.3,
         ),
       ),
     );

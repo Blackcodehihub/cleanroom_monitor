@@ -19,179 +19,99 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     final service = MockSensorService.instance;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 390;
-    final filteredHistory = _filterHistory(service.history);
 
     return AnimatedBuilder(
       animation: service,
       builder: (context, _) {
+        final filteredHistory = _filterHistory(service.history);
+        final recentLogs = filteredHistory.take(5).toList();
+
         return Scaffold(
           backgroundColor: softBg,
           body: SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      isSmallScreen ? 16 : 18,
-                      12,
-                      isSmallScreen ? 16 : 18,
-                      0,
-                    ),
-                    child: _pageHeader(filteredHistory.length),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+              children: [
+                _pageHeader(filteredHistory.length),
+                const SizedBox(height: 16),
 
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _sectionLabel(
-                      title: 'Time Range',
-                      subtitle:
-                          'Select the period of records shown in the chart, summary, and log',
-                    ),
-                  ),
+                _sectionLabel(
+                  title: 'Time Range',
+                  subtitle: 'Controls chart, summary, and logs',
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _filterTabs(),
-                  ),
-                ),
+                const SizedBox(height: 10),
+                _filterTabs(),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _sectionLabel(
-                      title: 'Chart Metric',
-                      subtitle:
-                          'Choose which sensor value to visualize in the trend chart',
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                _sectionLabel(
+                  title: 'Chart Metric',
+                  subtitle: 'Controls the trend chart only',
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _metricTabs(),
-                  ),
-                ),
+                const SizedBox(height: 10),
+                _metricTabs(),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _sectionLabel(
-                      title: 'Trend Overview',
-                      subtitle:
-                          'Visual trend of the selected metric for the current time range',
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _chartCard(filteredHistory),
-                  ),
-                ),
+                const SizedBox(height: 16),
+                _chartCard(filteredHistory),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _sectionLabel(
-                      title: 'Log Summary',
-                      subtitle:
-                          'Quick status summary of all records in the selected time range',
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _logSummaryCard(filteredHistory),
-                  ),
-                ),
+                const SizedBox(height: 16),
+                _logSummaryCard(filteredHistory),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isSmallScreen ? 16 : 18,
-                    ),
-                    child: _sectionLabel(
-                      title: 'Monitoring Data Log',
-                      subtitle:
-                          'Detailed sensor entries for review, reporting, and documentation',
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 10)),
-
-                if (filteredHistory.isEmpty)
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Expanded(
                       child: Text(
-                        'No readings available for this period.',
-                        style: TextStyle(fontSize: 14, color: Colors.black54),
+                        'Recent Data Logs',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.black87,
+                        ),
                       ),
                     ),
-                  )
-                else
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      isSmallScreen ? 16 : 18,
-                      0,
-                      isSmallScreen ? 16 : 18,
-                      28,
+                    TextButton(
+                      onPressed: filteredHistory.isEmpty
+                          ? null
+                          : () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AllLogsPage(
+                                    logs: filteredHistory,
+                                  ),
+                                ),
+                              );
+                            },
+                      child: const Text(
+                        'View All',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
                     ),
-                    sliver: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = filteredHistory[index];
-                        final logNumber = filteredHistory.length - index;
+                  ],
+                ),
+                const SizedBox(height: 8),
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _DataLogCard(
-                            logId:
-                                'LOG-${logNumber.toString().padLeft(3, '0')}',
-                            timestamp: _formatShortDateTime(item.timestamp),
-                            pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
-                            temp: '${item.temperature.toStringAsFixed(1)}°C',
-                            humidity: '${item.humidity.toStringAsFixed(1)}%',
-                            luminance:
-                                '${item.luminance.toStringAsFixed(0)} lux',
-                            status: item.status,
-                            deviceState: item.online ? 'Online' : 'Offline',
-                            remark: _buildRemark(item),
-                          ),
-                        );
-                      }, childCount: filteredHistory.length),
-                    ),
-                  ),
+                if (recentLogs.isEmpty)
+                  _emptyCard()
+                else
+                  ...recentLogs.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final item = entry.value;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _CompactLogCard(
+                        logId: 'LOG-${(filteredHistory.length - index).toString().padLeft(3, '0')}',
+                        timestamp: _formatShortDateTime(item.timestamp),
+                        status: item.status,
+                        pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
+                        temp: '${item.temperature.toStringAsFixed(1)}°C',
+                        humidity: '${item.humidity.toStringAsFixed(1)}%',
+                        luminance: '${item.luminance.toStringAsFixed(0)} lux',
+                        remark: _buildRemark(item),
+                      ),
+                    );
+                  }),
               ],
             ),
           ),
@@ -202,7 +122,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _pageHeader(int count) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Expanded(
           child: Column(
@@ -218,25 +137,17 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               SizedBox(height: 4),
               Text(
-                'Review recorded sensor readings and monitoring logs',
+                'Review sensor trends and recent records',
                 style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 10),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: Text(
             '$count logs',
@@ -251,7 +162,10 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _sectionLabel({required String title, required String subtitle}) {
+  Widget _sectionLabel({
+    required String title,
+    required String subtitle,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -276,126 +190,59 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  List<SensorReading> _filterHistory(List<SensorReading> history) {
-    final now = DateTime.now();
-
-    return history.where((item) {
-      final difference = now.difference(item.timestamp);
-
-      switch (selectedFilter) {
-        case HistoryFilter.daily:
-          return difference.inDays < 1;
-        case HistoryFilter.weekly:
-          return difference.inDays < 7;
-        case HistoryFilter.monthly:
-          return difference.inDays < 30;
-        case HistoryFilter.yearly:
-          return difference.inDays < 365;
-      }
-    }).toList();
+  Widget _filterTabs() {
+    return _tabContainer(
+      children: [
+        _filterButton('Daily', HistoryFilter.daily),
+        _filterButton('Weekly', HistoryFilter.weekly),
+        _filterButton('Monthly', HistoryFilter.monthly),
+        _filterButton('Yearly', HistoryFilter.yearly),
+      ],
+    );
   }
 
-  Widget _filterTabs() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool wrapTabs = constraints.maxWidth < 360;
+  Widget _metricTabs() {
+    return _tabContainer(
+      children: [
+        _metricButton('Temp', HistoryMetric.temperature),
+        _metricButton('Humidity', HistoryMetric.humidity),
+        _metricButton('PM2.5', HistoryMetric.pm25),
+        _metricButton('Lux', HistoryMetric.luminance),
+      ],
+    );
+  }
 
-        if (wrapTabs) {
-          return Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _filterButton('Daily', HistoryFilter.daily),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _filterButton('Weekly', HistoryFilter.weekly),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _filterButton('Monthly', HistoryFilter.monthly),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _filterButton('Yearly', HistoryFilter.yearly),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        }
-
-        return Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              _filterButton('Daily', HistoryFilter.daily),
-              _filterButton('Weekly', HistoryFilter.weekly),
-              _filterButton('Monthly', HistoryFilter.monthly),
-              _filterButton('Yearly', HistoryFilter.yearly),
-            ],
-          ),
-        );
-      },
+  Widget _tabContainer({required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(children: children),
     );
   }
 
   Widget _filterButton(String label, HistoryFilter filter) {
-    final isSelected = selectedFilter == filter;
+    final selected = selectedFilter == filter;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedFilter = filter;
-          });
-        },
+        onTap: () => setState(() => selectedFilter = filter),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            color: isSelected ? primaryGreen : Colors.transparent,
+            color: selected ? primaryGreen : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: isSelected ? Colors.white : Colors.black54,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: selected ? Colors.white : Colors.black54,
             ),
           ),
         ),
@@ -403,89 +250,26 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _metricTabs() {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final wrap = constraints.maxWidth < 360;
-
-          if (wrap) {
-            return Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _metricButton('Temp', HistoryMetric.temperature),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _metricButton('Humidity', HistoryMetric.humidity),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(child: _metricButton('PM2.5', HistoryMetric.pm25)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _metricButton('Lux', HistoryMetric.luminance),
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }
-
-          return Row(
-            children: [
-              _metricButton('Temp', HistoryMetric.temperature),
-              _metricButton('Humidity', HistoryMetric.humidity),
-              _metricButton('PM2.5', HistoryMetric.pm25),
-              _metricButton('Lux', HistoryMetric.luminance),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
   Widget _metricButton(String label, HistoryMetric metric) {
-    final isSelected = selectedMetric == metric;
+    final selected = selectedMetric == metric;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedMetric = metric;
-          });
-        },
+        onTap: () => setState(() => selectedMetric = metric),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFEAF6EC) : Colors.transparent,
+            color: selected ? const Color(0xFFEAF6EC) : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: isSelected ? primaryGreen : Colors.black54,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: selected ? primaryGreen : Colors.black54,
             ),
           ),
         ),
@@ -494,21 +278,17 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _chartCard(List<SensorReading> history) {
-    final color = _metricColor();
     final data = history.reversed.toList();
-
     final spots = <FlSpot>[];
+
     for (int i = 0; i < data.length; i++) {
       spots.add(FlSpot(i.toDouble(), _metricValue(data[i])));
     }
 
-    final double minY;
-    final double maxY;
+    double minY = 0;
+    double maxY = 10;
 
-    if (spots.isEmpty) {
-      minY = 0;
-      maxY = 10;
-    } else {
+    if (spots.isNotEmpty) {
       final values = spots.map((e) => e.y).toList();
       final minVal = values.reduce((a, b) => a < b ? a : b);
       final maxVal = values.reduce((a, b) => a > b ? a : b);
@@ -518,19 +298,9 @@ class _HistoryPageState extends State<HistoryPage> {
     }
 
     return Container(
-      height: 220,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      height: 210,
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -543,17 +313,17 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            _metricSubtitle(),
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          const Text(
+            'Visual overview for selected time range',
+            style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Expanded(
             child: spots.isEmpty
                 ? const Center(
                     child: Text(
                       'No chart data available.',
-                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                      style: TextStyle(color: Colors.black54),
                     ),
                   )
                 : LineChart(
@@ -563,83 +333,33 @@ class _HistoryPageState extends State<HistoryPage> {
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
-                        horizontalInterval: (maxY - minY) / 4,
-                        getDrawingHorizontalLine: (value) {
-                          return FlLine(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            strokeWidth: 1,
-                          );
-                        },
+                        getDrawingHorizontalLine: (_) => FlLine(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          strokeWidth: 1,
+                        ),
                       ),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
+                      titlesData: const FlTitlesData(
+                        topTitles: AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: const AxisTitles(
+                        rightTitles: AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 36,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                value.toStringAsFixed(0),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black45,
-                                ),
-                              );
-                            },
-                          ),
                         ),
                         bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 24,
-                            interval: spots.length > 6
-                                ? (spots.length / 4).ceilToDouble()
-                                : 1,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                value.toInt().toString(),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black45,
-                                ),
-                              );
-                            },
-                          ),
+                          sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
                       borderData: FlBorderData(show: false),
-                      lineTouchData: LineTouchData(
-                        touchTooltipData: LineTouchTooltipData(
-                          getTooltipColor: (_) => Colors.black87,
-                          getTooltipItems: (touchedSpots) {
-                            return touchedSpots.map((spot) {
-                              return LineTooltipItem(
-                                '${spot.y.toStringAsFixed(1)} ${_metricUnit()}',
-                                const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 11,
-                                ),
-                              );
-                            }).toList();
-                          },
-                        ),
-                      ),
                       lineBarsData: [
                         LineChartBarData(
                           spots: spots,
                           isCurved: true,
-                          color: color,
+                          color: _metricColor(),
                           barWidth: 3,
-                          dotData: FlDotData(show: spots.length < 12),
+                          dotData: FlDotData(show: spots.length < 10),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: color.withValues(alpha: 0.12),
+                            color: _metricColor().withValues(alpha: 0.12),
                           ),
                         ),
                       ],
@@ -652,64 +372,32 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _logSummaryCard(List<SensorReading> history) {
-    final safeCount = history.where((e) => e.status == 'SAFE').length;
-    final warningCount = history.where((e) => e.status == 'WARNING').length;
-    final criticalCount = history.where((e) => e.status == 'CRITICAL').length;
-    final offlineCount = history.where((e) => e.status == 'OFFLINE').length;
+    final safe = history.where((e) => e.status == 'SAFE').length;
+    final warning = history.where((e) => e.status == 'WARNING').length;
+    final critical = history.where((e) => e.status == 'CRITICAL').length;
+    final offline = history.where((e) => e.status == 'OFFLINE').length;
 
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: _cardDecoration(),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _summaryMiniBox(
-                  title: 'Safe',
-                  value: safeCount.toString(),
-                  color: primaryGreen,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _summaryMiniBox(
-                  title: 'Warning',
-                  value: warningCount.toString(),
-                  color: Colors.orange,
-                ),
-              ),
-            ],
+          const Text(
+            'Log Summary',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Colors.black87,
+            ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(
-                child: _summaryMiniBox(
-                  title: 'Critical',
-                  value: criticalCount.toString(),
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _summaryMiniBox(
-                  title: 'Offline',
-                  value: offlineCount.toString(),
-                  color: Colors.grey,
-                ),
-              ),
+              _summaryChip('Safe', safe, primaryGreen),
+              _summaryChip('Warn', warning, Colors.orange),
+              _summaryChip('Crit', critical, Colors.red),
+              _summaryChip('Off', offline, Colors.grey),
             ],
           ),
         ],
@@ -717,39 +405,82 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _summaryMiniBox({
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: color,
+  Widget _summaryChip(String label, int value, Color color) {
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value.toString(),
+              style: TextStyle(
+                color: color,
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black54,
-              fontWeight: FontWeight.w700,
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 10,
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _emptyCard() {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: _cardDecoration(),
+      child: const Center(
+        child: Text(
+          'No logs available for this period.',
+          style: TextStyle(color: Colors.black54),
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _cardDecoration() {
+    return BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+
+  List<SensorReading> _filterHistory(List<SensorReading> history) {
+    final now = DateTime.now();
+
+    return history.where((item) {
+      final diff = now.difference(item.timestamp);
+      switch (selectedFilter) {
+        case HistoryFilter.daily:
+          return diff.inDays < 1;
+        case HistoryFilter.weekly:
+          return diff.inDays < 7;
+        case HistoryFilter.monthly:
+          return diff.inDays < 30;
+        case HistoryFilter.yearly:
+          return diff.inDays < 365;
+      }
+    }).toList();
   }
 
   double _metricValue(SensorReading reading) {
@@ -778,38 +509,12 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  String _metricSubtitle() {
-    switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return 'Temperature changes across the selected time range';
-      case HistoryMetric.humidity:
-        return 'Humidity changes across the selected time range';
-      case HistoryMetric.pm25:
-        return 'Particle concentration changes across the selected time range';
-      case HistoryMetric.luminance:
-        return 'Light intensity changes across the selected time range';
-    }
-  }
-
-  String _metricUnit() {
-    switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return '°C';
-      case HistoryMetric.humidity:
-        return '%';
-      case HistoryMetric.pm25:
-        return 'µg/m³';
-      case HistoryMetric.luminance:
-        return 'lux';
-    }
-  }
-
   Color _metricColor() {
     switch (selectedMetric) {
       case HistoryMetric.temperature:
-        return const Color(0xFF2F9E44);
+        return primaryGreen;
       case HistoryMetric.humidity:
-        return const Color(0xFFFF7A59);
+        return const Color(0xFFFF922B);
       case HistoryMetric.pm25:
         return const Color(0xFF22B8CF);
       case HistoryMetric.luminance:
@@ -823,93 +528,118 @@ class _HistoryPageState extends State<HistoryPage> {
         : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-
-    final month = _monthName(dateTime.month);
-    final day = dateTime.day;
-
-    return '$month $day, $hour:$minute $period';
-  }
-
-  String _monthName(int month) {
-    const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return months[month];
+    return '$hour:$minute $period';
   }
 
   String _buildRemark(SensorReading reading) {
-    if (!reading.online) {
-      return 'Device offline; data transmission may be interrupted.';
-    }
-
-    if (reading.status == 'CRITICAL') {
-      return 'Exceeded safe threshold; immediate review recommended.';
-    }
-
-    if (reading.status == 'WARNING') {
-      return 'Approaching threshold; monitor closely.';
-    }
-
-    return 'Within acceptable monitoring range.';
+    if (!reading.online) return 'Device offline';
+    if (reading.status == 'CRITICAL') return 'Exceeded threshold';
+    if (reading.status == 'WARNING') return 'Monitor closely';
+    return 'Within acceptable range';
   }
 }
 
-enum HistoryFilter { daily, weekly, monthly, yearly }
+class AllLogsPage extends StatelessWidget {
+  final List<SensorReading> logs;
 
-enum HistoryMetric { temperature, humidity, pm25, luminance }
+  const AllLogsPage({
+    super.key,
+    required this.logs,
+  });
 
-class _DataLogCard extends StatelessWidget {
+  static const Color softBg = Color(0xFFF4F5F7);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: softBg,
+      appBar: AppBar(
+        title: const Text(
+          'All Data Logs',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+        itemCount: logs.length,
+        itemBuilder: (context, index) {
+          final item = logs[index];
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _CompactLogCard(
+              logId: 'LOG-${(logs.length - index).toString().padLeft(3, '0')}',
+              timestamp: _formatTime(item.timestamp),
+              status: item.status,
+              pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
+              temp: '${item.temperature.toStringAsFixed(1)}°C',
+              humidity: '${item.humidity.toStringAsFixed(1)}%',
+              luminance: '${item.luminance.toStringAsFixed(0)} lux',
+              remark: _remark(item),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour > 12
+        ? dateTime.hour - 12
+        : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
+  }
+
+  String _remark(SensorReading reading) {
+    if (!reading.online) return 'Device offline';
+    if (reading.status == 'CRITICAL') return 'Exceeded threshold';
+    if (reading.status == 'WARNING') return 'Monitor closely';
+    return 'Within acceptable range';
+  }
+}
+
+class _CompactLogCard extends StatelessWidget {
   final String logId;
   final String timestamp;
+  final String status;
   final String pm25;
   final String temp;
   final String humidity;
   final String luminance;
-  final String status;
-  final String deviceState;
   final String remark;
 
-  const _DataLogCard({
+  const _CompactLogCard({
     required this.logId,
     required this.timestamp,
+    required this.status,
     required this.pm25,
     required this.temp,
     required this.humidity,
     required this.luminance,
-    required this.status,
-    required this.deviceState,
     required this.remark,
   });
 
+  static const Color primaryGreen = Color(0xFF2F9E44);
+
   @override
   Widget build(BuildContext context) {
-    final Color statusColor = _statusColor(status);
-    final Color deviceColor = deviceState == 'Online'
-        ? const Color(0xFF2F9E44)
-        : Colors.grey;
+    final color = _statusColor(status);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -917,150 +647,103 @@ class _DataLogCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  logId,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF2F9E44),
-                  ),
+              Text(
+                logId,
+                style: const TextStyle(
+                  color: primaryGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
                 ),
               ),
+              const Spacer(),
               Text(
                 timestamp,
                 style: const TextStyle(
-                  fontSize: 12,
                   color: Colors.black54,
                   fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-
+          const SizedBox(height: 12),
           Row(
             children: [
-              _badge(status, statusColor),
-              const SizedBox(width: 8),
-              _badge(deviceState, deviceColor),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-          Divider(height: 1, color: Colors.black.withValues(alpha: 0.07)),
-          const SizedBox(height: 14),
-
-          Row(
-            children: [
-              Expanded(child: _metricBox('PM2.5', pm25)),
-              const SizedBox(width: 10),
-              Expanded(child: _metricBox('Temp', temp)),
+              Expanded(child: _miniValue('PM2.5', pm25)),
+              Expanded(child: _miniValue('Temp', temp)),
+              Expanded(child: _miniValue('Hum', humidity)),
+              Expanded(child: _miniValue('Lux', luminance)),
             ],
           ),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _metricBox('Humidity', humidity)),
-              const SizedBox(width: 10),
-              Expanded(child: _metricBox('Lux', luminance)),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-          Divider(height: 1, color: Colors.black.withValues(alpha: 0.07)),
-          const SizedBox(height: 14),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F6F7),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Remarks',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
+              const Icon(Icons.notes_rounded, size: 14, color: Colors.black38),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
                   remark,
                   style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
-                    height: 1.35,
+                    fontSize: 11,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _badge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.w800,
+  Widget _miniValue(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.black45,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
-    );
-  }
-
-  Widget _metricBox(String title, String value) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F6F7),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black54,
-              fontWeight: FontWeight.w700,
-            ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 10.5,
+            color: Colors.black87,
+            fontWeight: FontWeight.w900,
           ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: Colors.black87,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Color _statusColor(String status) {
     switch (status) {
       case 'SAFE':
-        return const Color(0xFF2F9E44);
+        return primaryGreen;
       case 'WARNING':
         return Colors.orange;
       case 'CRITICAL':
@@ -1069,4 +752,18 @@ class _DataLogCard extends StatelessWidget {
         return Colors.grey;
     }
   }
+}
+
+enum HistoryFilter {
+  daily,
+  weekly,
+  monthly,
+  yearly,
+}
+
+enum HistoryMetric {
+  temperature,
+  humidity,
+  pm25,
+  luminance,
 }

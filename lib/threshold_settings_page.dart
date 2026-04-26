@@ -19,6 +19,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
   late final TextEditingController humidityMaxController;
   late final TextEditingController lightOnController;
   late final TextEditingController lightOffController;
+  late final TextEditingController notificationNumberController;
 
   @override
   void initState() {
@@ -39,6 +40,8 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         TextEditingController(text: settings.lightOnMinutes.toString());
     lightOffController =
         TextEditingController(text: settings.lightOffMinutes.toString());
+    notificationNumberController =
+        TextEditingController(text: settings.notificationNumber);
   }
 
   @override
@@ -50,6 +53,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     humidityMaxController.dispose();
     lightOnController.dispose();
     lightOffController.dispose();
+    notificationNumberController.dispose();
     super.dispose();
   }
 
@@ -63,6 +67,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     final humidityMax = double.tryParse(humidityMaxController.text.trim());
     final lightOn = int.tryParse(lightOnController.text.trim());
     final lightOff = int.tryParse(lightOffController.text.trim());
+    final notificationNumber = notificationNumberController.text.trim();
 
     if (pm25Max == null ||
         tempMin == null ||
@@ -70,9 +75,10 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         humidityMin == null ||
         humidityMax == null ||
         lightOn == null ||
-        lightOff == null) {
+        lightOff == null ||
+        notificationNumber.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid numeric values')),
+        const SnackBar(content: Text('Please complete all fields properly')),
       );
       return;
     }
@@ -105,10 +111,10 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
       lightOffMinutes: lightOff,
     );
 
+    service.updateNotificationNumber(notificationNumber);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Threshold and light schedule saved successfully'),
-      ),
+      const SnackBar(content: Text('Limits saved successfully')),
     );
 
     setState(() {});
@@ -117,115 +123,137 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final service = MockSensorService.instance;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 390;
 
     return AnimatedBuilder(
       animation: service,
       builder: (context, _) {
-        return Scaffold(
-          backgroundColor: softBg,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                isSmallScreen ? 16 : 18,
-                12,
-                isSmallScreen ? 16 : 18,
-                24,
-              ),
+        return DefaultTabController(
+          length: 4,
+          child: Scaffold(
+            backgroundColor: softBg,
+            body: SafeArea(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Thresholds',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                    ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                    child: _header(service),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Sensor limits, light schedule, and override controls',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                    ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: _tabs(),
                   ),
-                  const SizedBox(height: 16),
-                  _infoCard(service),
-                  const SizedBox(height: 16),
-                  _sectionCard(
-                    title: 'PM2.5 Limit',
-                    subtitle: 'Set the maximum safe PM2.5 concentration',
-                    child: _singleField(
-                      label: 'Maximum PM2.5',
-                      controller: pm25MaxController,
-                      suffix: 'µg/m³',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _sectionCard(
-                    title: 'Temperature Range',
-                    subtitle: 'Set the acceptable operating temperature range',
-                    child: _rangeFields(
-                      minLabel: 'Minimum',
-                      maxLabel: 'Maximum',
-                      minController: tempMinController,
-                      maxController: tempMaxController,
-                      suffix: '°C',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _sectionCard(
-                    title: 'Humidity Range',
-                    subtitle: 'Set the acceptable relative humidity range',
-                    child: _rangeFields(
-                      minLabel: 'Minimum',
-                      maxLabel: 'Maximum',
-                      minController: humidityMinController,
-                      maxController: humidityMaxController,
-                      suffix: '%',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _sectionCard(
-                    title: 'Light Schedule',
-                    subtitle:
-                        'Set how long the lights stay ON and OFF in auto mode',
-                    child: _rangeFields(
-                      minLabel: 'ON Duration',
-                      maxLabel: 'OFF Duration',
-                      minController: lightOnController,
-                      maxController: lightOffController,
-                      suffix: 'min',
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _sectionCard(
-                    title: 'Light Override',
-                    subtitle: 'Manual control for the cleanroom lights',
-                    child: _overrideButtons(service),
-                  ),
-                  const SizedBox(height: 22),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton.icon(
-                      onPressed: _saveSettings,
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text(
-                        'Save Thresholds',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        _tabBody(
+                          children: [
+                            _sectionCard(
+                              icon: Icons.air_rounded,
+                              title: 'Air Quality Limit',
+                              subtitle: 'Set the maximum allowed PM2.5 value.',
+                              child: _singleField(
+                                label: 'PM2.5 Maximum',
+                                controller: pm25MaxController,
+                                suffix: 'µg/m³',
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryGreen,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                        _tabBody(
+                          children: [
+                            _sectionCard(
+                              icon: Icons.thermostat_rounded,
+                              title: 'Temperature Range',
+                              subtitle: 'Set the safe temperature range.',
+                              child: _rangeFields(
+                                minLabel: 'Min Temp',
+                                maxLabel: 'Max Temp',
+                                minController: tempMinController,
+                                maxController: tempMaxController,
+                                suffix: '°C',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _sectionCard(
+                              icon: Icons.water_drop_rounded,
+                              title: 'Humidity Range',
+                              subtitle: 'Set the safe humidity range.',
+                              child: _rangeFields(
+                                minLabel: 'Min Humidity',
+                                maxLabel: 'Max Humidity',
+                                minController: humidityMinController,
+                                maxController: humidityMaxController,
+                                suffix: '%',
+                              ),
+                            ),
+                          ],
+                        ),
+                        _tabBody(
+                          children: [
+                            _sectionCard(
+                              icon: Icons.light_mode_rounded,
+                              title: 'Light Schedule',
+                              subtitle:
+                                  'Set how long lights stay ON and OFF in auto mode.',
+                              child: _rangeFields(
+                                minLabel: 'ON Duration',
+                                maxLabel: 'OFF Duration',
+                                minController: lightOnController,
+                                maxController: lightOffController,
+                                suffix: 'min',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            _sectionCard(
+                              icon: Icons.touch_app_rounded,
+                              title: 'Light Override',
+                              subtitle: 'Manually control the lights.',
+                              child: _overrideButtons(service),
+                            ),
+                          ],
+                        ),
+                        _tabBody(
+                          children: [
+                            _sectionCard(
+                              icon: Icons.sms_outlined,
+                              title: 'Notification Receiver',
+                              subtitle:
+                                  'Set the phone number that will receive alert notifications.',
+                              child: _singleField(
+                                label: 'Contact Number',
+                                controller: notificationNumberController,
+                                suffix: '',
+                                keyboardType: TextInputType.phone,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _saveSettings,
+                        icon: const Icon(Icons.save_rounded),
+                        label: const Text(
+                          'Save Limits',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryGreen,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                         ),
                       ),
                     ),
@@ -239,109 +267,86 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     );
   }
 
-  Widget _infoCard(MockSensorService service) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: primaryGreen.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(22),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.white,
-            child: Icon(Icons.tune_rounded, color: primaryGreen),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Current light mode: ${service.overrideModeText} • Light status: ${service.lightStatusText}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _overrideButtons(MockSensorService service) {
-    return Column(
+  Widget _header(MockSensorService service) {
+    return Row(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _overrideButton(
-                label: 'Auto',
-                selected:
-                    service.thresholds.overrideMode == LightOverrideMode.auto,
-                onTap: () => service.setLightOverride(LightOverrideMode.auto),
+        const Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Limits',
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _overrideButton(
-                label: 'Force ON',
-                selected:
-                    service.thresholds.overrideMode == LightOverrideMode.forceOn,
-                onTap: () => service.setLightOverride(LightOverrideMode.forceOn),
+              SizedBox(height: 4),
+              Text(
+                'Manage thresholds, lighting, and alert receiver',
+                style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _overrideButton(
-                label: 'Force OFF',
-                selected: service.thresholds.overrideMode ==
-                    LightOverrideMode.forceOff,
-                onTap: () =>
-                    service.setLightOverride(LightOverrideMode.forceOff),
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            service.lightStatusText,
+            style: const TextStyle(
+              color: primaryGreen,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
             ),
-            const Expanded(child: SizedBox()),
-          ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _overrideButton({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected ? primaryGreen : const Color(0xFFF4F5F7),
-          borderRadius: BorderRadius.circular(16),
+  Widget _tabs() {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: const TabBar(
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicator: BoxDecoration(
+          color: Color(0xFFEAF6EC),
+          borderRadius: BorderRadius.all(Radius.circular(14)),
         ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: selected ? Colors.white : Colors.black87,
-          ),
-        ),
+        labelColor: primaryGreen,
+        unselectedLabelColor: Colors.black54,
+        labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
+        unselectedLabelStyle:
+            TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+        dividerColor: Colors.transparent,
+        tabs: [
+          Tab(text: 'Air'),
+          Tab(text: 'Climate'),
+          Tab(text: 'Light'),
+          Tab(text: 'Notify'),
+        ],
       ),
     );
   }
 
+  Widget _tabBody({required List<Widget> children}) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+      child: Column(children: children),
+    );
+  }
+
   Widget _sectionCard({
+    required IconData icon,
     required String title,
     required String subtitle,
     required Widget child,
@@ -354,8 +359,8 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -363,15 +368,27 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              color: Colors.black87,
-            ),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: primaryGreen.withValues(alpha: 0.10),
+                child: Icon(icon, color: primaryGreen, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             subtitle,
             style: const TextStyle(
@@ -391,39 +408,17 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     required String label,
     required TextEditingController controller,
     required String suffix,
+    TextInputType keyboardType = TextInputType.number,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.black54,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        _fieldLabel(label),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xFFF8F9FA),
-            suffixText: suffix,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(16)),
-              borderSide: BorderSide(color: primaryGreen, width: 1.3),
-            ),
-          ),
+          keyboardType: keyboardType,
+          decoration: _inputDecoration(suffix: suffix),
         ),
       ],
     );
@@ -436,48 +431,116 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     required TextEditingController maxController,
     required String suffix,
   }) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool stack = constraints.maxWidth < 320;
+    return Row(
+      children: [
+        Expanded(
+          child: _singleField(
+            label: minLabel,
+            controller: minController,
+            suffix: suffix,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _singleField(
+            label: maxLabel,
+            controller: maxController,
+            suffix: suffix,
+          ),
+        ),
+      ],
+    );
+  }
 
-        if (stack) {
-          return Column(
-            children: [
-              _singleField(
-                label: minLabel,
-                controller: minController,
-                suffix: suffix,
-              ),
-              const SizedBox(height: 12),
-              _singleField(
-                label: maxLabel,
-                controller: maxController,
-                suffix: suffix,
-              ),
-            ],
-          );
-        }
+  Widget _overrideButtons(MockSensorService service) {
+    return Row(
+      children: [
+        Expanded(
+          child: _overrideButton(
+            label: 'Auto',
+            selected: service.thresholds.overrideMode == LightOverrideMode.auto,
+            onTap: () => service.setLightOverride(LightOverrideMode.auto),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _overrideButton(
+            label: 'ON',
+            selected:
+                service.thresholds.overrideMode == LightOverrideMode.forceOn,
+            onTap: () => service.setLightOverride(LightOverrideMode.forceOn),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _overrideButton(
+            label: 'OFF',
+            selected:
+                service.thresholds.overrideMode == LightOverrideMode.forceOff,
+            onTap: () => service.setLightOverride(LightOverrideMode.forceOff),
+          ),
+        ),
+      ],
+    );
+  }
 
-        return Row(
-          children: [
-            Expanded(
-              child: _singleField(
-                label: minLabel,
-                controller: minController,
-                suffix: suffix,
-              ),
+  Widget _overrideButton({
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        height: 46,
+        decoration: BoxDecoration(
+          color: selected ? primaryGreen : const Color(0xFFF5F6F7),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.black54,
+              fontSize: 12,
+              fontWeight: FontWeight.w900,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _singleField(
-                label: maxLabel,
-                controller: maxController,
-                suffix: suffix,
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _fieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        color: Colors.black54,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({required String suffix}) {
+    return InputDecoration(
+      filled: true,
+      fillColor: const Color(0xFFF8F9FA),
+      suffixText: suffix.isEmpty ? null : suffix,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(16)),
+        borderSide: BorderSide(color: primaryGreen, width: 1.3),
+      ),
     );
   }
 }
