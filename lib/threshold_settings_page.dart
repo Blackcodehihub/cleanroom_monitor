@@ -19,7 +19,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
   late final TextEditingController humidityMaxController;
   late final TextEditingController lightOnController;
   late final TextEditingController lightOffController;
-  late final TextEditingController notificationNumberController;
 
   @override
   void initState() {
@@ -40,8 +39,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         TextEditingController(text: settings.lightOnMinutes.toString());
     lightOffController =
         TextEditingController(text: settings.lightOffMinutes.toString());
-    notificationNumberController =
-        TextEditingController(text: settings.notificationNumber);
   }
 
   @override
@@ -53,7 +50,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     humidityMaxController.dispose();
     lightOnController.dispose();
     lightOffController.dispose();
-    notificationNumberController.dispose();
     super.dispose();
   }
 
@@ -67,7 +63,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     final humidityMax = double.tryParse(humidityMaxController.text.trim());
     final lightOn = int.tryParse(lightOnController.text.trim());
     final lightOff = int.tryParse(lightOffController.text.trim());
-    final notificationNumber = notificationNumberController.text.trim();
 
     if (pm25Max == null ||
         tempMin == null ||
@@ -75,8 +70,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         humidityMin == null ||
         humidityMax == null ||
         lightOn == null ||
-        lightOff == null ||
-        notificationNumber.isEmpty) {
+        lightOff == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all fields properly')),
       );
@@ -111,8 +105,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
       lightOffMinutes: lightOff,
     );
 
-    service.updateNotificationNumber(notificationNumber);
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Limits saved successfully')),
     );
@@ -128,7 +120,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
       animation: service,
       builder: (context, _) {
         return DefaultTabController(
-          length: 4,
+          length: 3,
           child: Scaffold(
             backgroundColor: softBg,
             body: SafeArea(
@@ -214,22 +206,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
                             ),
                           ],
                         ),
-                        _tabBody(
-                          children: [
-                            _sectionCard(
-                              icon: Icons.sms_outlined,
-                              title: 'Notification Receiver',
-                              subtitle:
-                                  'Set the phone number that will receive alert notifications.',
-                              child: _singleField(
-                                label: 'Contact Number',
-                                controller: notificationNumberController,
-                                suffix: '',
-                                keyboardType: TextInputType.phone,
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -284,7 +260,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
               ),
               SizedBox(height: 4),
               Text(
-                'Manage thresholds, lighting, and alert receiver',
+                'Manage thresholds and lighting behavior',
                 style: TextStyle(fontSize: 13, color: Colors.black54),
               ),
             ],
@@ -332,7 +308,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
           Tab(text: 'Air'),
           Tab(text: 'Climate'),
           Tab(text: 'Light'),
-          Tab(text: 'Notify'),
         ],
       ),
     );
@@ -408,7 +383,6 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     required String label,
     required TextEditingController controller,
     required String suffix,
-    TextInputType keyboardType = TextInputType.number,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,7 +391,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          keyboardType: keyboardType,
+          keyboardType: TextInputType.number,
           decoration: _inputDecoration(suffix: suffix),
         ),
       ],
@@ -527,7 +501,7 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     return InputDecoration(
       filled: true,
       fillColor: const Color(0xFFF8F9FA),
-      suffixText: suffix.isEmpty ? null : suffix,
+      suffixText: suffix,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),

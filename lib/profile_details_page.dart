@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'profile_service.dart';
+import 'mock_sensor_service.dart';
 
 class ProfileDetailsPage extends StatefulWidget {
   const ProfileDetailsPage({super.key});
@@ -14,15 +16,24 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
   static const Color darkGreen = Color(0xFF237A35);
   static const Color softBg = Color(0xFFF4F5F7);
 
-  final TextEditingController fullNameController =
-      TextEditingController(text: 'Prototype User');
-  final TextEditingController emailController =
-      TextEditingController(text: 'prototype.user@email.com');
-  final TextEditingController contactController =
-      TextEditingController(text: '09123456789');
+  late final TextEditingController fullNameController;
+  late final TextEditingController emailController;
+  late final TextEditingController contactController;
 
   final ImagePicker _picker = ImagePicker();
   File? selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final profile = ProfileService.instance;
+
+    fullNameController = TextEditingController(text: profile.fullName);
+    emailController = TextEditingController(text: profile.email);
+    contactController = TextEditingController(text: profile.contactNumber);
+    selectedImage = profile.profileImage;
+  }
 
   @override
   void dispose() {
@@ -39,11 +50,6 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
     setState(() {
       selectedImage = File(image.path);
     });
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile photo selected')),
-    );
   }
 
   void _saveChanges() {
@@ -68,8 +74,24 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
       return;
     }
 
+    if (contact.length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid contact number')),
+      );
+      return;
+    }
+
+    ProfileService.instance.updateProfile(
+      newFullName: fullName,
+      newEmail: email,
+      newContactNumber: contact,
+      newProfileImage: selectedImage,
+    );
+
+    MockSensorService.instance.updateNotificationNumber(contact);
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile changes saved successfully')),
+      const SnackBar(content: Text('Profile changes saved')),
     );
 
     Navigator.pop(context);
@@ -100,7 +122,8 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
             const SizedBox(height: 16),
             _sectionCard(
               title: 'Personal Information',
-              subtitle: 'Update your profile details',
+              subtitle:
+                  'Update your profile details and alert receiver contact number',
               child: Column(
                 children: [
                   _fieldLabel('Full Name'),
@@ -128,11 +151,32 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                     prefixIcon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                   ),
+                  const SizedBox(height: 8),
+                  const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 16,
+                        color: Colors.black38,
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'This number will be used as the alert receiver number.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.black45,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
             const SizedBox(height: 22),
-
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -171,9 +215,7 @@ class _ProfileDetailsPageState extends State<ProfileDetailsPage> {
                 ),
               ),
             ),
-
             const SizedBox(height: 12),
-
             SizedBox(
               width: double.infinity,
               height: 54,
