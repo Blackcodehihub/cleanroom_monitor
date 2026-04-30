@@ -1,91 +1,144 @@
 import 'package:flutter/material.dart';
-import 'mock_sensor_service.dart';
+import 'services/api_service.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
   static const Color primaryGreen = Color(0xFF2F9E44);
   static const Color softBg = Color(0xFFF4F5F7);
 
+  final String deviceId = "031bdde7-98e1-469c-8819-b989c97d308a";
+
+  Map<String, dynamic>? latestReading;
+  List<dynamic> alerts = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchDashboardData();
+  }
+
+  Future<void> fetchDashboardData() async {
+    try {
+      final readingData = await ApiService.getLatestReading(deviceId);
+      final alertData = await ApiService.getAlerts();
+
+      setState(() {
+        latestReading = readingData;
+        alerts = alertData;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error loading dashboard: $e")),
+      );
+    }
+  }
+
+  String getStatus() {
+    final temp = latestReading?['temperature'] ?? 0;
+    final humidity = latestReading?['humidity'] ?? 0;
+    final particles = latestReading?['particle_level'] ?? 0;
+
+    if (temp > 30 || humidity > 65 || particles > 1000) {
+      return "WARNING";
+    }
+
+    return "SAFE";
+  }
+
+  Color getStatusColor(String status) {
+    if (status == "SAFE") return primaryGreen;
+    if (status == "WARNING") return Colors.orange;
+    return Colors.red;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final service = MockSensorService.instance;
     final screenWidth = MediaQuery.of(context).size.width;
-
     final bool isSmallScreen = screenWidth < 390;
     final double gridAspectRatio = isSmallScreen ? 0.88 : 0.98;
     final double sensorValueSize = isSmallScreen ? 26 : 30;
     final double heroTempSize = isSmallScreen ? 34 : 38;
 
-    return AnimatedBuilder(
-      animation: service,
-      builder: (context, _) {
-        final reading = service.currentReading;
-        final statusColor = service.statusColor(reading.status);
+    if (isLoading) {
+      return const Scaffold(
+        backgroundColor: softBg,
+        body: Center(
+          child: CircularProgressIndicator(color: primaryGreen),
+        ),
+      );
+    }
 
-        return Scaffold(
-          backgroundColor: softBg,
-          body: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildTopBar(reading.online),
-                  const SizedBox(height: 18),
-                  _heroStatusCard(
-                    reading: reading,
-                    service: service,
-                    statusColor: statusColor,
-                    heroTempSize: heroTempSize,
-                    isSmallScreen: isSmallScreen,
+    final status = getStatus();
+    final statusColor = getStatusColor(status);
+
+    return Scaffold(
+      backgroundColor: softBg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: fetchDashboardData,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTopBar(true),
+                const SizedBox(height: 18),
+                _heroStatusCard(
+                  status: status,
+                  statusColor: statusColor,
+                  heroTempSize: heroTempSize,
+                  isSmallScreen: isSmallScreen,
+                ),
+                const SizedBox(height: 14),
+                _lightControlCard(),
+                const SizedBox(height: 16),
+                const Text(
+                  'Environmental Overview',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
                   ),
-                  const SizedBox(height: 14),
-                  _lightControlCard(service),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Environmental Overview',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
+                ),
+                const SizedBox(height: 12),
+                _sensorGrid(
+                  gridAspectRatio: gridAspectRatio,
+                  sensorValueSize: sensorValueSize,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Devices',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
                   ),
-                  const SizedBox(height: 12),
-                  _sensorGrid(
-                    reading,
-                    gridAspectRatio: gridAspectRatio,
-                    sensorValueSize: sensorValueSize,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Devices',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _deviceCard(
-                    title: 'Cleanroom Main Device',
-                    subtitle: 'Tap to view device details',
-                    online: reading.online,
-                  ),
-                  const SizedBox(height: 10),
-                  _deviceCard(
-                    title: 'Monitoring Node A1',
-                    subtitle: 'PM2.5 / Temp / Humidity / Lux active',
-                    online: true,
-                  ),
-                  const SizedBox(height: 16),
-                  _recentAlertsSection(service),
-                ],
-              ),
+                ),
+                const SizedBox(height: 12),
+                _deviceCard(
+                  title: 'Alima Device 1',
+                  subtitle: 'Cleanroom A monitoring device',
+                  online: true,
+                ),
+                const SizedBox(height: 16),
+                _recentAlertsSection(),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -126,12 +179,14 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _heroStatusCard({
-    required SensorReading reading,
-    required MockSensorService service,
+    required String status,
     required Color statusColor,
     required double heroTempSize,
     required bool isSmallScreen,
   }) {
+    final temperature = latestReading?['temperature'] ?? '--';
+    final updatedAt = latestReading?['created_at'] ?? 'No data';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -149,15 +204,16 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment:
-                isSmallScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            crossAxisAlignment: isSmallScreen
+                ? CrossAxisAlignment.start
+                : CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${reading.temperature.toStringAsFixed(1)}°C',
+                      '$temperature°C',
                       style: TextStyle(
                         fontSize: heroTempSize,
                         fontWeight: FontWeight.w900,
@@ -166,7 +222,7 @@ class DashboardPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'ISO monitoring mode active',
+                      'Real-time cleanroom monitoring active',
                       style: TextStyle(
                         fontSize: isSmallScreen ? 12 : 13,
                         color: Colors.grey.shade600,
@@ -177,14 +233,8 @@ class DashboardPage extends StatelessWidget {
                       spacing: 18,
                       runSpacing: 8,
                       children: [
-                        _miniReading(
-                          label: 'System Status',
-                          value: reading.status,
-                        ),
-                        _miniReading(
-                          label: 'Device',
-                          value: reading.online ? 'Online' : 'Offline',
-                        ),
+                        _miniReading(label: 'System Status', value: status),
+                        _miniReading(label: 'Device', value: 'Online'),
                       ],
                     ),
                   ],
@@ -199,11 +249,9 @@ class DashboardPage extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  reading.status == 'SAFE'
+                  status == 'SAFE'
                       ? Icons.cloud_done_rounded
-                      : reading.status == 'WARNING'
-                          ? Icons.warning_amber_rounded
-                          : Icons.error_outline_rounded,
+                      : Icons.warning_amber_rounded,
                   size: isSmallScreen ? 36 : 42,
                   color: statusColor,
                 ),
@@ -221,7 +269,7 @@ class DashboardPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Last updated: ${service.formatTime(reading.timestamp)}',
+                    'Last updated: $updatedAt',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
@@ -253,7 +301,7 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _lightControlCard(MockSensorService service) {
+  Widget _lightControlCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -268,10 +316,10 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Light Control',
             style: TextStyle(
               fontSize: 15,
@@ -279,71 +327,12 @@ class DashboardPage extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
-            'Mode: ${service.overrideModeText} • Status: ${service.lightStatusText}',
-            style: const TextStyle(
+            'Mode: Auto • Override: ON/OFF available',
+            style: TextStyle(
               fontSize: 12,
               color: Colors.black54,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _lightMiniBox(
-                  'ON Time',
-                  '${service.thresholds.lightOnMinutes} min',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _lightMiniBox(
-                  'OFF Time',
-                  '${service.thresholds.lightOffMinutes} min',
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _lightMiniBox(
-                  'Remaining',
-                  service.thresholds.overrideMode == LightOverrideMode.auto
-                      ? '${service.minutesRemainingInLightCycle} min'
-                      : '--',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _lightMiniBox(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F6F7),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black54,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: Colors.black87,
             ),
           ),
         ],
@@ -379,11 +368,14 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _sensorGrid(
-    SensorReading reading, {
+  Widget _sensorGrid({
     required double gridAspectRatio,
     required double sensorValueSize,
   }) {
+    final temperature = latestReading?['temperature'] ?? '--';
+    final humidity = latestReading?['humidity'] ?? '--';
+    final particles = latestReading?['particle_level'] ?? '--';
+
     return GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
@@ -393,8 +385,8 @@ class DashboardPage extends StatelessWidget {
       childAspectRatio: gridAspectRatio,
       children: [
         _colorStatCard(
-          title: 'PM2.5',
-          value: '${reading.pm25.toStringAsFixed(1)}',
+          title: 'Particles',
+          value: '$particles',
           note: 'Air particles',
           icon: Icons.air_rounded,
           colors: const [Color(0xFF22B8CF), Color(0xFF15AABF)],
@@ -402,7 +394,7 @@ class DashboardPage extends StatelessWidget {
         ),
         _colorStatCard(
           title: 'Humidity',
-          value: '${reading.humidity.toStringAsFixed(1)}%',
+          value: '$humidity%',
           note: 'Relative humidity',
           icon: Icons.water_drop_rounded,
           colors: const [Color(0xFFFF922B), Color(0xFFFF6B6B)],
@@ -410,7 +402,7 @@ class DashboardPage extends StatelessWidget {
         ),
         _colorStatCard(
           title: 'Temperature',
-          value: '${reading.temperature.toStringAsFixed(1)}°C',
+          value: '$temperature°C',
           note: 'Normal range configured in thresholds',
           icon: Icons.thermostat_rounded,
           colors: const [Color(0xFF40C057), Color(0xFF2F9E44)],
@@ -418,8 +410,8 @@ class DashboardPage extends StatelessWidget {
         ),
         _colorStatCard(
           title: 'Luminance',
-          value: '${reading.luminance.toStringAsFixed(0)} lux',
-          note: 'Based on timer / override mode',
+          value: '-- lux',
+          note: 'Light control: auto / override',
           icon: Icons.wb_sunny_outlined,
           colors: const [Color(0xFFFAB005), Color(0xFFF59F00)],
           valueSize: sensorValueSize - 2,
@@ -558,8 +550,8 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _recentAlertsSection(MockSensorService service) {
-    final alerts = service.alerts.take(3).toList();
+  Widget _recentAlertsSection() {
+    final recentAlerts = alerts.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,67 +565,77 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ...alerts.map(
-          (alert) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor:
-                        (alert.isWarning ? Colors.orange : primaryGreen)
-                            .withOpacity(0.12),
-                    child: Icon(
-                      alert.isWarning
-                          ? Icons.warning_amber_rounded
-                          : Icons.check_circle_rounded,
-                      color: alert.isWarning ? Colors.orange : primaryGreen,
-                      size: 20,
+        if (recentAlerts.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Text(
+              'No recent alerts',
+              style: TextStyle(color: Colors.black54),
+            ),
+          )
+        else
+          ...recentAlerts.map(
+            (alert) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          alert.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          alert.message,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.orange.withOpacity(0.12),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                        size: 20,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            alert['type'] ?? 'Alert',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            alert['message'] ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.black54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

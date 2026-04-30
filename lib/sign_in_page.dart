@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'sign_up_page.dart';
 import 'forgot_password_page.dart';
+import 'services/api_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -29,7 +30,7 @@ class _SignInPageState extends State<SignInPage> {
     super.dispose();
   }
 
-  void _signIn() {
+  void _signIn() async {
     if (emailController.text.trim().isEmpty ||
         passwordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -40,10 +41,33 @@ class _SignInPageState extends State<SignInPage> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    try {
+      final result = await ApiService.login(
+        emailController.text.trim(),
+        passwordController.text.trim(),
+      );
+
+      print(result); // for debugging
+
+      if (result.containsKey('session')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login successful')),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomePage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['error'] ?? 'Login failed')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
   }
 
   @override
