@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'mock_sensor_service.dart';
-import 'notifications_page.dart';
 import 'profile_service.dart';
 
 class AlertsPage extends StatelessWidget {
@@ -26,10 +25,10 @@ class AlertsPage extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-                  child: _topHeader(context, alerts.length),
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                  child: _topHeader(alerts.length),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: _summarySection(
@@ -37,7 +36,7 @@ class AlertsPage extends StatelessWidget {
                     stableCount: stableCount,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 Expanded(
                   child: alerts.isEmpty
                       ? const Center(
@@ -50,7 +49,7 @@ class AlertsPage extends StatelessWidget {
                           ),
                         )
                       : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                          padding: const EdgeInsets.fromLTRB(18, 6, 18, 96),
                           itemCount: alerts.length,
                           itemBuilder: (context, index) {
                             final alert = alerts[index];
@@ -70,86 +69,74 @@ class AlertsPage extends StatelessWidget {
     );
   }
 
-  Widget _topHeader(BuildContext context, int alertCount) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Expanded(
-              child: Text(
-                'Alerts',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const NotificationsPage(),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.settings_rounded,
-                  color: primaryGreen,
-                  size: 20,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Monitor warnings and system updates',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.black54,
+  Widget _topHeader(int count) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Text(
-            '$alertCount alerts',
-            style: const TextStyle(
+        ],
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: primaryGreen.withValues(alpha: 0.10),
+            child: const Icon(
+              Icons.notifications_active_rounded,
               color: primaryGreen,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
+              size: 24,
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 14),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Alerts',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Monitor warnings and system updates',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF6EC),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              '$count alerts',
+              style: const TextStyle(
+                color: primaryGreen,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -200,28 +187,26 @@ class AlertsPage extends StatelessWidget {
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    color: color,
-                  ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: color,
                 ),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w700,
-                  ),
+              ),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w700,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -230,16 +215,16 @@ class AlertsPage extends StatelessWidget {
 
   Widget _alertCard(MockSensorService service, AlertItem alert) {
     final color = alert.isWarning ? Colors.orange : primaryGreen;
-    final receiverNumber = ProfileService.instance.contactNumber;
+    final receiver = ProfileService.instance.contactNumber;
 
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.035),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -249,7 +234,7 @@ class AlertsPage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 21,
+            radius: 22,
             backgroundColor: color.withValues(alpha: 0.12),
             child: Icon(
               alert.isWarning
@@ -258,7 +243,7 @@ class AlertsPage extends StatelessWidget {
               color: color,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,8 +254,8 @@ class AlertsPage extends StatelessWidget {
                       child: Text(
                         alert.title,
                         style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
                           color: Colors.black87,
                         ),
                       ),
@@ -278,11 +263,11 @@ class AlertsPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 5,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(14),
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         alert.isWarning ? 'Warning' : 'Stable',
@@ -299,17 +284,17 @@ class AlertsPage extends StatelessWidget {
                 Text(
                   alert.message,
                   style: const TextStyle(
+                    fontSize: 13,
                     color: Colors.black54,
-                    fontSize: 12,
-                    height: 1.35,
+                    height: 1.4,
                   ),
                 ),
                 if (alert.isWarning) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
+                      horizontal: 12,
+                      vertical: 10,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5F6F7),
@@ -319,17 +304,17 @@ class AlertsPage extends StatelessWidget {
                       children: [
                         const Icon(
                           Icons.sms_outlined,
-                          size: 15,
+                          size: 16,
                           color: primaryGreen,
                         ),
-                        const SizedBox(width: 7),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Sent to: $receiverNumber',
+                            'Sent to: $receiver',
                             style: const TextStyle(
-                              fontSize: 11,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
                               color: Colors.black54,
-                              fontWeight: FontWeight.w800,
                             ),
                           ),
                         ),
@@ -337,7 +322,7 @@ class AlertsPage extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Row(
                   children: [
                     const Icon(
@@ -345,7 +330,7 @@ class AlertsPage extends StatelessWidget {
                       size: 14,
                       color: Colors.black38,
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 6),
                     Text(
                       service.formatTime(alert.timestamp),
                       style: const TextStyle(
