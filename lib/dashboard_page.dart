@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'mock_sensor_service.dart';
+import 'alerts_page.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -22,6 +23,7 @@ class DashboardPage extends StatelessWidget {
       builder: (context, _) {
         final reading = service.currentReading;
         final statusColor = service.statusColor(reading.status);
+        final warningCount = service.alerts.where((a) => a.isWarning).length;
 
         return Scaffold(
           backgroundColor: softBg,
@@ -31,7 +33,7 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildTopBar(reading.online),
+                  _buildTopBar(context, reading.online, warningCount),
                   const SizedBox(height: 18),
                   _heroStatusCard(
                     reading: reading,
@@ -78,8 +80,6 @@ class DashboardPage extends StatelessWidget {
                     subtitle: 'PM2.5 / Temp / Humidity / Lux active',
                     online: true,
                   ),
-                  const SizedBox(height: 16),
-                  _recentAlertsSection(service),
                 ],
               ),
             ),
@@ -89,37 +89,101 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar(bool online) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildTopBar(BuildContext context, bool online, int warningCount) {
+    return Row(
       children: [
-        const Text(
-          'Welcome back',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.black45,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Welcome back',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black45,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                children: [
+                  const Text(
+                    'Cleanroom Operator',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '●',
+                    style: TextStyle(
+                      color: online ? primaryGreen : Colors.red,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 2),
-        Row(
-          children: [
-            const Text(
-              'Cleanroom Operator',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: Colors.black87,
+        InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AlertsPage()),
+            );
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  color: primaryGreen,
+                  size: 22,
+                ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '●',
-              style: TextStyle(
-                color: online ? primaryGreen : Colors.red,
-                fontSize: 14,
-              ),
-            ),
-          ],
+              if (warningCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Text(
+                      warningCount > 99 ? '99+' : warningCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ],
     );
@@ -140,7 +204,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -195,7 +259,7 @@ class DashboardPage extends StatelessWidget {
                 width: isSmallScreen ? 74 : 84,
                 height: isSmallScreen ? 74 : 84,
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.10),
+                  color: statusColor.withValues(alpha: 0.10),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -230,10 +294,9 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.20),
+                    color: Colors.white.withValues(alpha: 0.20),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Text(
@@ -262,7 +325,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -394,7 +457,7 @@ class DashboardPage extends StatelessWidget {
       children: [
         _colorStatCard(
           title: 'PM2.5',
-          value: '${reading.pm25.toStringAsFixed(1)}',
+          value: reading.pm25.toStringAsFixed(1),
           note: 'Air particles',
           icon: Icons.air_rounded,
           colors: const [Color(0xFF22B8CF), Color(0xFF15AABF)],
@@ -451,7 +514,7 @@ class DashboardPage extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 14,
-            backgroundColor: Colors.white.withOpacity(0.22),
+            backgroundColor: Colors.white.withValues(alpha: 0.22),
             child: Icon(icon, color: Colors.white, size: 16),
           ),
           const Spacer(),
@@ -502,7 +565,7 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -555,86 +618,6 @@ class DashboardPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _recentAlertsSection(MockSensorService service) {
-    final alerts = service.alerts.take(3).toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Alerts',
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ...alerts.map(
-          (alert) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor:
-                        (alert.isWarning ? Colors.orange : primaryGreen)
-                            .withOpacity(0.12),
-                    child: Icon(
-                      alert.isWarning
-                          ? Icons.warning_amber_rounded
-                          : Icons.check_circle_rounded,
-                      color: alert.isWarning ? Colors.orange : primaryGreen,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          alert.title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          alert.message,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

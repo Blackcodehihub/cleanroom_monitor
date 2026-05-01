@@ -2,11 +2,24 @@ import 'package:flutter/material.dart';
 import 'mock_sensor_service.dart';
 import 'profile_service.dart';
 
-class AlertsPage extends StatelessWidget {
+enum AlertFilter {
+  all,
+  warning,
+  stable,
+}
+
+class AlertsPage extends StatefulWidget {
   const AlertsPage({super.key});
 
+  @override
+  State<AlertsPage> createState() => _AlertsPageState();
+}
+
+class _AlertsPageState extends State<AlertsPage> {
   static const Color primaryGreen = Color(0xFF2F9E44);
   static const Color softBg = Color(0xFFF4F5F7);
+
+  AlertFilter selectedFilter = AlertFilter.all;
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +28,15 @@ class AlertsPage extends StatelessWidget {
     return AnimatedBuilder(
       animation: service,
       builder: (context, _) {
-        final alerts = service.alerts;
-        final warningCount = alerts.where((a) => a.isWarning).length;
-        final stableCount = alerts.where((a) => !a.isWarning).length;
+        final allAlerts = service.alerts;
+        final warningCount = allAlerts.where((a) => a.isWarning).length;
+        final stableCount = allAlerts.where((a) => !a.isWarning).length;
+
+        final alerts = switch (selectedFilter) {
+          AlertFilter.warning => allAlerts.where((a) => a.isWarning).toList(),
+          AlertFilter.stable => allAlerts.where((a) => !a.isWarning).toList(),
+          AlertFilter.all => allAlerts,
+        };
 
         return Scaffold(
           backgroundColor: softBg,
@@ -26,7 +45,7 @@ class AlertsPage extends StatelessWidget {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-                  child: _topHeader(alerts.length),
+                  child: _topHeader(context, allAlerts.length),
                 ),
                 const SizedBox(height: 14),
                 Padding(
@@ -39,10 +58,14 @@ class AlertsPage extends StatelessWidget {
                 const SizedBox(height: 12),
                 Expanded(
                   child: alerts.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
-                            'No alerts available.',
-                            style: TextStyle(
+                            selectedFilter == AlertFilter.warning
+                                ? 'No warning alerts available.'
+                                : selectedFilter == AlertFilter.stable
+                                    ? 'No stable alerts available.'
+                                    : 'No alerts available.',
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,
                             ),
@@ -69,7 +92,7 @@ class AlertsPage extends StatelessWidget {
     );
   }
 
-  Widget _topHeader(int count) {
+  Widget _topHeader(BuildContext context, int count) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -86,16 +109,24 @@ class AlertsPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: primaryGreen.withValues(alpha: 0.10),
-            child: const Icon(
-              Icons.notifications_active_rounded,
-              color: primaryGreen,
-              size: 24,
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F6F7),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                size: 18,
+                color: Colors.black87,
+              ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,18 +151,27 @@ class AlertsPage extends StatelessWidget {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF6EC),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              '$count alerts',
-              style: const TextStyle(
-                color: primaryGreen,
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedFilter = AlertFilter.all;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: selectedFilter == AlertFilter.all
+                    ? const Color(0xFFEAF6EC)
+                    : const Color(0xFFF5F6F7),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '$count alerts',
+                style: const TextStyle(
+                  color: primaryGreen,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                ),
               ),
             ),
           ),
@@ -152,6 +192,12 @@ class AlertsPage extends StatelessWidget {
             value: warningCount.toString(),
             color: Colors.orange,
             icon: Icons.warning_amber_rounded,
+            selected: selectedFilter == AlertFilter.warning,
+            onTap: () {
+              setState(() {
+                selectedFilter = AlertFilter.warning;
+              });
+            },
           ),
         ),
         const SizedBox(width: 10),
@@ -161,6 +207,12 @@ class AlertsPage extends StatelessWidget {
             value: stableCount.toString(),
             color: primaryGreen,
             icon: Icons.check_circle_rounded,
+            selected: selectedFilter == AlertFilter.stable,
+            onTap: () {
+              setState(() {
+                selectedFilter = AlertFilter.stable;
+              });
+            },
           ),
         ),
       ],
@@ -172,43 +224,57 @@ class AlertsPage extends StatelessWidget {
     required String value,
     required Color color,
     required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: color.withValues(alpha: 0.16),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: color,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: selected
+              ? color.withValues(alpha: 0.18)
+              : color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: selected
+              ? Border.all(
+                  color: color.withValues(alpha: 0.45),
+                  width: 1.2,
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: color.withValues(alpha: 0.16),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                  ),
                 ),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w700,
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

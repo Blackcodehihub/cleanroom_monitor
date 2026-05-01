@@ -34,14 +34,12 @@ class _HistoryPageState extends State<HistoryPage> {
               children: [
                 _pageHeader(filteredHistory.length),
                 const SizedBox(height: 16),
-
                 _sectionLabel(
                   title: 'Time Range',
                   subtitle: 'Controls chart, summary, and logs',
                 ),
                 const SizedBox(height: 10),
                 _filterTabs(),
-
                 const SizedBox(height: 16),
                 _sectionLabel(
                   title: 'Chart Metric',
@@ -49,13 +47,10 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
                 const SizedBox(height: 10),
                 _metricTabs(),
-
                 const SizedBox(height: 16),
                 _chartCard(filteredHistory),
-
                 const SizedBox(height: 16),
                 _logSummaryCard(filteredHistory),
-
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -90,7 +85,6 @@ class _HistoryPageState extends State<HistoryPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-
                 if (recentLogs.isEmpty)
                   _emptyCard()
                 else
@@ -101,7 +95,8 @@ class _HistoryPageState extends State<HistoryPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _CompactLogCard(
-                        logId: 'LOG-${(filteredHistory.length - index).toString().padLeft(3, '0')}',
+                        logId:
+                            'LOG-${(filteredHistory.length - index).toString().padLeft(3, '0')}',
                         timestamp: _formatShortDateTime(item.timestamp),
                         status: item.status,
                         pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
@@ -292,14 +287,37 @@ class _HistoryPageState extends State<HistoryPage> {
       final values = spots.map((e) => e.y).toList();
       final minVal = values.reduce((a, b) => a < b ? a : b);
       final maxVal = values.reduce((a, b) => a > b ? a : b);
-      final padding = ((maxVal - minVal).abs() * 0.2).clamp(1.0, 1000.0);
+      final range = (maxVal - minVal).abs();
+      final padding = range == 0 ? _defaultChartPadding() : range * 0.22;
+
       minY = minVal - padding;
       maxY = maxVal + padding;
+
+      if (selectedMetric == HistoryMetric.temperature) {
+        minY = minY.floorToDouble();
+        maxY = maxY.ceilToDouble();
+      } else if (selectedMetric == HistoryMetric.humidity) {
+        minY = minY.floorToDouble();
+        maxY = maxY.ceilToDouble();
+      } else if (selectedMetric == HistoryMetric.pm25) {
+        minY = minY.floorToDouble();
+        maxY = maxY.ceilToDouble();
+      } else if (selectedMetric == HistoryMetric.luminance) {
+        minY = (minY / 1000).floor() * 1000;
+        maxY = (maxY / 1000).ceil() * 1000;
+      }
+
+      if (minY == maxY) {
+        minY -= _defaultChartPadding();
+        maxY += _defaultChartPadding();
+      }
     }
 
+    final interval = _chartInterval(minY, maxY);
+
     return Container(
-      height: 210,
-      padding: const EdgeInsets.all(16),
+      height: 265,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +335,7 @@ class _HistoryPageState extends State<HistoryPage> {
             'Visual overview for selected time range',
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Expanded(
             child: spots.isEmpty
                 ? const Center(
@@ -330,36 +348,93 @@ class _HistoryPageState extends State<HistoryPage> {
                     LineChartData(
                       minY: minY,
                       maxY: maxY,
+                      minX: spots.first.x,
+                      maxX: spots.last.x,
+                      clipData: const FlClipData.all(),
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
+                        horizontalInterval: interval,
                         getDrawingHorizontalLine: (_) => FlLine(
-                          color: Colors.black.withValues(alpha: 0.06),
+                          color: Colors.black.withValues(alpha: 0.07),
                           strokeWidth: 1,
                         ),
                       ),
-                      titlesData: const FlTitlesData(
-                        topTitles: AxisTitles(
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        rightTitles: AxisTitles(
+                        rightTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
                         ),
-                        bottomTitles: AxisTitles(
+                        bottomTitles: const AxisTitles(
                           sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize:
+                                selectedMetric == HistoryMetric.luminance
+                                    ? 54
+                                    : 42,
+                            interval: interval,
+                            getTitlesWidget: (value, meta) {
+                              final isBottomEdge =
+                                  (value - minY).abs() < interval * 0.35;
+                              final isTopEdge =
+                                  (value - maxY).abs() < interval * 0.35;
+
+                              if (isBottomEdge || isTopEdge) {
+                                return const SizedBox.shrink();
+                              }
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: Text(
+                                  _formatChartLabel(value),
+                                  textAlign: TextAlign.right,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                       borderData: FlBorderData(show: false),
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          tooltipRoundedRadius: 12,
+                          getTooltipItems: (items) {
+                            return items.map((item) {
+                              return LineTooltipItem(
+                                _formatTooltipValue(item.y),
+                                TextStyle(
+                                  color: _metricColor(),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 12,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
                       lineBarsData: [
                         LineChartBarData(
                           spots: spots,
                           isCurved: true,
+                          curveSmoothness: 0.30,
                           color: _metricColor(),
                           barWidth: 3,
-                          dotData: FlDotData(show: spots.length < 10),
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(show: spots.length <= 8),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: _metricColor().withValues(alpha: 0.12),
+                            color: _metricColor().withValues(alpha: 0.13),
                           ),
                         ),
                       ],
@@ -369,6 +444,70 @@ class _HistoryPageState extends State<HistoryPage> {
         ],
       ),
     );
+  }
+
+  double _defaultChartPadding() {
+    switch (selectedMetric) {
+      case HistoryMetric.temperature:
+        return 1.0;
+      case HistoryMetric.humidity:
+        return 3.0;
+      case HistoryMetric.pm25:
+        return 5.0;
+      case HistoryMetric.luminance:
+        return 1000.0;
+    }
+  }
+
+  double _chartInterval(double minY, double maxY) {
+    final range = (maxY - minY).abs();
+
+    switch (selectedMetric) {
+      case HistoryMetric.temperature:
+        return range <= 4 ? 1 : 2;
+      case HistoryMetric.humidity:
+        return range <= 10 ? 2 : 5;
+      case HistoryMetric.pm25:
+        return range <= 20 ? 5 : 10;
+      case HistoryMetric.luminance:
+        return range <= 4000 ? 1000 : 2000;
+    }
+  }
+
+  String _formatChartLabel(double value) {
+    switch (selectedMetric) {
+      case HistoryMetric.temperature:
+      case HistoryMetric.humidity:
+        return _cleanNumber(value, decimals: 1);
+      case HistoryMetric.pm25:
+        return _cleanNumber(value, decimals: 0);
+      case HistoryMetric.luminance:
+        if (value.abs() >= 1000) {
+          return '${_cleanNumber(value / 1000, decimals: 1)}K';
+        }
+        return _cleanNumber(value, decimals: 0);
+    }
+  }
+
+  String _cleanNumber(double value, {required int decimals}) {
+    final rounded = value.roundToDouble();
+    if ((value - rounded).abs() < 0.001) {
+      return rounded.toInt().toString();
+    }
+    return value.toStringAsFixed(decimals);
+  }
+
+  String _formatTooltipValue(double value) {
+    switch (selectedMetric) {
+      case HistoryMetric.temperature:
+        return '${value.toStringAsFixed(1)}°C';
+      case HistoryMetric.humidity:
+        return '${value.toStringAsFixed(1)}%';
+      case HistoryMetric.pm25:
+        return '${value.toStringAsFixed(1)} µg/m³';
+      case HistoryMetric.luminance:
+        return '${value.toStringAsFixed(0)} lux';
+    }
   }
 
   Widget _logSummaryCard(List<SensorReading> history) {
