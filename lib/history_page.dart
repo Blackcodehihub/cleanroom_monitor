@@ -12,6 +12,8 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   HistoryFilter selectedFilter = HistoryFilter.daily;
   HistoryMetric selectedMetric = HistoryMetric.temperature;
+  // Added: Filter state for the log list
+  String selectedStatusFilter = 'ALL'; 
 
   static const Color primaryGreen = Color(0xFF2F9E44);
   static const Color softBg = Color(0xFFF4F5F7);
@@ -24,7 +26,13 @@ class _HistoryPageState extends State<HistoryPage> {
       animation: service,
       builder: (context, _) {
         final filteredHistory = _filterHistory(service.history);
-        final recentLogs = filteredHistory.take(5).toList();
+        
+        // Apply status filtering to the recent logs list
+        final listDisplayLogs = selectedStatusFilter == 'ALL'
+            ? filteredHistory
+            : filteredHistory.where((log) => log.status == selectedStatusFilter).toList();
+            
+        final recentLogs = listDisplayLogs.take(5).toList();
 
         return Scaffold(
           backgroundColor: softBg,
@@ -54,25 +62,32 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Recent Data Logs',
-                        style: TextStyle(
+                        selectedStatusFilter == 'ALL' 
+                            ? 'Recent Data Logs' 
+                            : 'Recent $selectedStatusFilter Logs',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
                           color: Colors.black87,
                         ),
                       ),
                     ),
+                    if (selectedStatusFilter != 'ALL')
+                      TextButton(
+                        onPressed: () => setState(() => selectedStatusFilter = 'ALL'),
+                        child: const Text('Clear Filter'),
+                      ),
                     TextButton(
-                      onPressed: filteredHistory.isEmpty
+                      onPressed: listDisplayLogs.isEmpty
                           ? null
                           : () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => AllLogsPage(
-                                    logs: filteredHistory,
+                                    logs: listDisplayLogs,
                                   ),
                                 ),
                               );
@@ -95,8 +110,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _CompactLogCard(
-                        logId:
-                            'LOG-${(filteredHistory.length - index).toString().padLeft(3, '0')}',
+                        logId: 'LOG-${(filteredHistory.length - filteredHistory.indexOf(item)).toString().padLeft(3, '0')}',
                         timestamp: _formatShortDateTime(item.timestamp),
                         status: item.status,
                         pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
@@ -157,10 +171,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _sectionLabel({
-    required String title,
-    required String subtitle,
-  }) {
+  Widget _sectionLabel({required String title, required String subtitle}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -220,7 +231,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _filterButton(String label, HistoryFilter filter) {
     final selected = selectedFilter == filter;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => selectedFilter = filter),
@@ -247,7 +257,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _metricButton(String label, HistoryMetric metric) {
     final selected = selectedMetric == metric;
-
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => selectedMetric = metric),
@@ -293,13 +302,9 @@ class _HistoryPageState extends State<HistoryPage> {
       minY = minVal - padding;
       maxY = maxVal + padding;
 
-      if (selectedMetric == HistoryMetric.temperature) {
-        minY = minY.floorToDouble();
-        maxY = maxY.ceilToDouble();
-      } else if (selectedMetric == HistoryMetric.humidity) {
-        minY = minY.floorToDouble();
-        maxY = maxY.ceilToDouble();
-      } else if (selectedMetric == HistoryMetric.pm25) {
+      if (selectedMetric == HistoryMetric.temperature || 
+          selectedMetric == HistoryMetric.humidity || 
+          selectedMetric == HistoryMetric.pm25) {
         minY = minY.floorToDouble();
         maxY = maxY.ceilToDouble();
       } else if (selectedMetric == HistoryMetric.luminance) {
@@ -338,18 +343,13 @@ class _HistoryPageState extends State<HistoryPage> {
           const SizedBox(height: 16),
           Expanded(
             child: spots.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No chart data available.',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  )
+                ? const Center(child: Text('No chart data available.'))
                 : LineChart(
                     LineChartData(
                       minY: minY,
                       maxY: maxY,
-                      minX: spots.first.x,
-                      maxX: spots.last.x,
+                      minX: spots.isNotEmpty ? spots.first.x : 0,
+                      maxX: spots.isNotEmpty ? spots.last.x : 0,
                       clipData: const FlClipData.all(),
                       gridData: FlGridData(
                         show: true,
@@ -361,43 +361,24 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ),
                       titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize:
-                                selectedMetric == HistoryMetric.luminance
-                                    ? 54
-                                    : 42,
+                            reservedSize: selectedMetric == HistoryMetric.luminance ? 54 : 42,
                             interval: interval,
                             getTitlesWidget: (value, meta) {
-                              final isBottomEdge =
-                                  (value - minY).abs() < interval * 0.35;
-                              final isTopEdge =
-                                  (value - maxY).abs() < interval * 0.35;
-
-                              if (isBottomEdge || isTopEdge) {
+                              if ((value - minY).abs() < interval * 0.35 || (value - maxY).abs() < interval * 0.35) {
                                 return const SizedBox.shrink();
                               }
-
                               return Padding(
                                 padding: const EdgeInsets.only(right: 8),
                                 child: Text(
                                   _formatChartLabel(value),
                                   textAlign: TextAlign.right,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.black54,
-                                  ),
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.black54),
                                 ),
                               );
                             },
@@ -405,24 +386,6 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ),
                       borderData: FlBorderData(show: false),
-                      lineTouchData: LineTouchData(
-                        enabled: true,
-                        touchTooltipData: LineTouchTooltipData(
-                          tooltipRoundedRadius: 12,
-                          getTooltipItems: (items) {
-                            return items.map((item) {
-                              return LineTooltipItem(
-                                _formatTooltipValue(item.y),
-                                TextStyle(
-                                  color: _metricColor(),
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 12,
-                                ),
-                              );
-                            }).toList();
-                          },
-                        ),
-                      ),
                       lineBarsData: [
                         LineChartBarData(
                           spots: spots,
@@ -448,29 +411,20 @@ class _HistoryPageState extends State<HistoryPage> {
 
   double _defaultChartPadding() {
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return 1.0;
-      case HistoryMetric.humidity:
-        return 3.0;
-      case HistoryMetric.pm25:
-        return 5.0;
-      case HistoryMetric.luminance:
-        return 1000.0;
+      case HistoryMetric.temperature: return 1.0;
+      case HistoryMetric.humidity: return 3.0;
+      case HistoryMetric.pm25: return 5.0;
+      case HistoryMetric.luminance: return 1000.0;
     }
   }
 
   double _chartInterval(double minY, double maxY) {
     final range = (maxY - minY).abs();
-
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return range <= 4 ? 1 : 2;
-      case HistoryMetric.humidity:
-        return range <= 10 ? 2 : 5;
-      case HistoryMetric.pm25:
-        return range <= 20 ? 5 : 10;
-      case HistoryMetric.luminance:
-        return range <= 4000 ? 1000 : 2000;
+      case HistoryMetric.temperature: return range <= 4 ? 1 : 2;
+      case HistoryMetric.humidity: return range <= 10 ? 2 : 5;
+      case HistoryMetric.pm25: return range <= 20 ? 5 : 10;
+      case HistoryMetric.luminance: return range <= 4000 ? 1000 : 2000;
     }
   }
 
@@ -482,31 +436,22 @@ class _HistoryPageState extends State<HistoryPage> {
       case HistoryMetric.pm25:
         return _cleanNumber(value, decimals: 0);
       case HistoryMetric.luminance:
-        if (value.abs() >= 1000) {
-          return '${_cleanNumber(value / 1000, decimals: 1)}K';
-        }
-        return _cleanNumber(value, decimals: 0);
+        return value.abs() >= 1000 ? '${_cleanNumber(value / 1000, decimals: 1)}K' : _cleanNumber(value, decimals: 0);
     }
   }
 
   String _cleanNumber(double value, {required int decimals}) {
     final rounded = value.roundToDouble();
-    if ((value - rounded).abs() < 0.001) {
-      return rounded.toInt().toString();
-    }
+    if ((value - rounded).abs() < 0.001) return rounded.toInt().toString();
     return value.toStringAsFixed(decimals);
   }
 
   String _formatTooltipValue(double value) {
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return '${value.toStringAsFixed(1)}°C';
-      case HistoryMetric.humidity:
-        return '${value.toStringAsFixed(1)}%';
-      case HistoryMetric.pm25:
-        return '${value.toStringAsFixed(1)} µg/m³';
-      case HistoryMetric.luminance:
-        return '${value.toStringAsFixed(0)} lux';
+      case HistoryMetric.temperature: return '${value.toStringAsFixed(1)}°C';
+      case HistoryMetric.humidity: return '${value.toStringAsFixed(1)}%';
+      case HistoryMetric.pm25: return '${value.toStringAsFixed(1)} µg/m³';
+      case HistoryMetric.luminance: return '${value.toStringAsFixed(0)} lux';
     }
   }
 
@@ -524,19 +469,15 @@ class _HistoryPageState extends State<HistoryPage> {
         children: [
           const Text(
             'Log Summary',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-              color: Colors.black87,
-            ),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: Colors.black87),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              _summaryChip('Safe', safe, primaryGreen),
-              _summaryChip('Warn', warning, Colors.orange),
-              _summaryChip('Crit', critical, Colors.red),
-              _summaryChip('Off', offline, Colors.grey),
+              _summaryChip('Safe', safe, primaryGreen, 'SAFE'),
+              _summaryChip('Warn', warning, Colors.orange, 'WARNING'),
+              _summaryChip('Crit', critical, Colors.red, 'CRITICAL'),
+              _summaryChip('Off', offline, Colors.grey, 'OFFLINE'),
             ],
           ),
         ],
@@ -544,34 +485,41 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _summaryChip(String label, int value, Color color) {
+  Widget _summaryChip(String label, int value, Color color, String statusKey) {
+    final isSelected = selectedStatusFilter == statusKey;
+    
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value.toString(),
-              style: TextStyle(
-                color: color,
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-              ),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            // Toggle filter: if already selected, clear it; otherwise, select it.
+            selectedStatusFilter = isSelected ? 'ALL' : statusKey;
+          });
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: isSelected ? 0.25 : 0.10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? color : Colors.transparent,
+              width: 2,
             ),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: Colors.black54,
-                fontWeight: FontWeight.w700,
+          ),
+          child: Column(
+            children: [
+              Text(
+                value.toString(),
+                style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w900),
               ),
-            ),
-          ],
+              Text(
+                label,
+                style: const TextStyle(fontSize: 10, color: Colors.black54, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -582,10 +530,7 @@ class _HistoryPageState extends State<HistoryPage> {
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(),
       child: const Center(
-        child: Text(
-          'No logs available for this period.',
-          style: TextStyle(color: Colors.black54),
-        ),
+        child: Text('No logs available for this period.', style: TextStyle(color: Colors.black54)),
       ),
     );
   }
@@ -595,76 +540,53 @@ class _HistoryPageState extends State<HistoryPage> {
       color: Colors.white,
       borderRadius: BorderRadius.circular(24),
       boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.04),
-          blurRadius: 12,
-          offset: const Offset(0, 4),
-        ),
+        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
       ],
     );
   }
 
   List<SensorReading> _filterHistory(List<SensorReading> history) {
     final now = DateTime.now();
-
     return history.where((item) {
       final diff = now.difference(item.timestamp);
       switch (selectedFilter) {
-        case HistoryFilter.daily:
-          return diff.inDays < 1;
-        case HistoryFilter.weekly:
-          return diff.inDays < 7;
-        case HistoryFilter.monthly:
-          return diff.inDays < 30;
-        case HistoryFilter.yearly:
-          return diff.inDays < 365;
+        case HistoryFilter.daily: return diff.inDays < 1;
+        case HistoryFilter.weekly: return diff.inDays < 7;
+        case HistoryFilter.monthly: return diff.inDays < 30;
+        case HistoryFilter.yearly: return diff.inDays < 365;
       }
     }).toList();
   }
 
   double _metricValue(SensorReading reading) {
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return reading.temperature;
-      case HistoryMetric.humidity:
-        return reading.humidity;
-      case HistoryMetric.pm25:
-        return reading.pm25;
-      case HistoryMetric.luminance:
-        return reading.luminance;
+      case HistoryMetric.temperature: return reading.temperature;
+      case HistoryMetric.humidity: return reading.humidity;
+      case HistoryMetric.pm25: return reading.pm25;
+      case HistoryMetric.luminance: return reading.luminance;
     }
   }
 
   String _metricTitle() {
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return 'Temperature';
-      case HistoryMetric.humidity:
-        return 'Humidity';
-      case HistoryMetric.pm25:
-        return 'PM2.5';
-      case HistoryMetric.luminance:
-        return 'Luminance';
+      case HistoryMetric.temperature: return 'Temperature';
+      case HistoryMetric.humidity: return 'Humidity';
+      case HistoryMetric.pm25: return 'PM2.5';
+      case HistoryMetric.luminance: return 'Luminance';
     }
   }
 
   Color _metricColor() {
     switch (selectedMetric) {
-      case HistoryMetric.temperature:
-        return primaryGreen;
-      case HistoryMetric.humidity:
-        return const Color(0xFFFF922B);
-      case HistoryMetric.pm25:
-        return const Color(0xFF22B8CF);
-      case HistoryMetric.luminance:
-        return const Color(0xFFF59F00);
+      case HistoryMetric.temperature: return primaryGreen;
+      case HistoryMetric.humidity: return const Color(0xFFFF922B);
+      case HistoryMetric.pm25: return const Color(0xFF22B8CF);
+      case HistoryMetric.luminance: return const Color(0xFFF59F00);
     }
   }
 
   String _formatShortDateTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12
-        ? dateTime.hour - 12
-        : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
@@ -680,11 +602,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
 class AllLogsPage extends StatelessWidget {
   final List<SensorReading> logs;
-
-  const AllLogsPage({
-    super.key,
-    required this.logs,
-  });
+  const AllLogsPage({super.key, required this.logs});
 
   static const Color softBg = Color(0xFFF4F5F7);
 
@@ -693,20 +611,16 @@ class AllLogsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: softBg,
       appBar: AppBar(
-        title: const Text(
-          'All Data Logs',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
+        title: const Text('All Data Logs', style: TextStyle(fontWeight: FontWeight.w900)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
+        elevation: 0,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
         itemCount: logs.length,
         itemBuilder: (context, index) {
           final item = logs[index];
-
           return Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _CompactLogCard(
@@ -726,9 +640,7 @@ class AllLogsPage extends StatelessWidget {
   }
 
   String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12
-        ? dateTime.hour - 12
-        : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
@@ -775,49 +687,21 @@ class _CompactLogCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.035),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.035), blurRadius: 10, offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Text(
-                logId,
-                style: const TextStyle(
-                  color: primaryGreen,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
+              Text(logId, style: const TextStyle(color: primaryGreen, fontWeight: FontWeight.w900, fontSize: 12)),
               const Spacer(),
-              Text(
-                timestamp,
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
+              Text(timestamp, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w700, fontSize: 12)),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                  ),
-                ),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(14)),
+                child: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 10)),
               ),
             ],
           ),
@@ -838,11 +722,7 @@ class _CompactLogCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   remark,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -855,54 +735,22 @@ class _CompactLogCard extends StatelessWidget {
   Widget _miniValue(String label, String value) {
     return Column(
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.black45,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.black45, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
-        Text(
-          value,
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 10.5,
-            color: Colors.black87,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        Text(value, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10.5, color: Colors.black87, fontWeight: FontWeight.w900)),
       ],
     );
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case 'SAFE':
-        return primaryGreen;
-      case 'WARNING':
-        return Colors.orange;
-      case 'CRITICAL':
-        return Colors.red;
-      default:
-        return Colors.grey;
+      case 'SAFE': return primaryGreen;
+      case 'WARNING': return Colors.orange;
+      case 'CRITICAL': return Colors.red;
+      default: return Colors.grey;
     }
   }
 }
 
-enum HistoryFilter {
-  daily,
-  weekly,
-  monthly,
-  yearly,
-}
-
-enum HistoryMetric {
-  temperature,
-  humidity,
-  pm25,
-  luminance,
-}
+enum HistoryFilter { daily, weekly, monthly, yearly }
+enum HistoryMetric { temperature, humidity, pm25, luminance }
