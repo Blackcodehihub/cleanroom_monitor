@@ -12,7 +12,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   fl_chart: ^0.68.0
-  image_picker: ^1.1.2   # ✅ ADDED (for profile photo upload)
+  image_picker: ^1.1.2
+  # ✅ ADDED for splash screen control
+  flutter_native_splash: ^2.4.0 
 
 dev_dependencies:
   flutter_test:
@@ -22,13 +24,26 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-
   assets:
     - assets/images/logo.png
     - assets/images/logo2.png
 
+# Keep your existing launcher icon config
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/logo2.png"
   min_sdk_android: 21
+
+# ✅ ADDED: Configuration to make the splash logo bigger
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/logo2.png
+  
+  # This property helps the logo fill more space on Android 12+
+  android_12:
+    image: assets/images/logo2.png
+    icon_backgroundColor: "#FFFFFF"
+    
+  # Setting this to true removes status bars, allowing the logo to appear larger
+  fullscreen: true
