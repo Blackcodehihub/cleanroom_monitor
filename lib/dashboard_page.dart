@@ -69,12 +69,7 @@ class DashboardPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _deviceCard(
-                    title: 'Cleanroom Main Device',
-                    subtitle: '', // Gikuha na ang "Tap to view device details"
-                    online: reading.online,
-                  ),
-                  const SizedBox(height: 10),
+                  // "Cleanroom Main Device" has been removed here
                   _deviceCard(
                     title: 'Monitoring Node A1',
                     subtitle: 'PM2.5 / Temp / Humidity / Lux active',
@@ -98,7 +93,10 @@ class DashboardPage extends StatelessWidget {
             children: [
               const Text(
                 'Welcome back',
-                style: TextStyle(fontSize: 12, color: Colors.black45),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.black45,
+                ),
               ),
               const SizedBox(height: 2),
               Row(
@@ -160,7 +158,10 @@ class DashboardPage extends StatelessWidget {
                   top: -5,
                   right: -5,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(12),
@@ -207,7 +208,8 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment: isSmallScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            crossAxisAlignment:
+                isSmallScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
@@ -234,8 +236,14 @@ class DashboardPage extends StatelessWidget {
                       spacing: 18,
                       runSpacing: 8,
                       children: [
-                        _miniReading(label: 'System Status', value: reading.status),
-                        _miniReading(label: 'Device', value: reading.online ? 'Online' : 'Offline'),
+                        _miniReading(
+                          label: 'System Status',
+                          value: reading.status,
+                        ),
+                        _miniReading(
+                          label: 'Device',
+                          value: reading.online ? 'Online' : 'Offline',
+                        ),
                       ],
                     ),
                   ],
@@ -332,14 +340,27 @@ class DashboardPage extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Mode: ${service.overrideModeText} • Status: ${service.lightStatusText}',
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _lightMiniBox('ON Time', '${service.thresholds.lightOnMinutes} min')),
+              Expanded(
+                child: _lightMiniBox(
+                  'ON Time',
+                  '${service.thresholds.lightOnMinutes} min',
+                ),
+              ),
               const SizedBox(width: 10),
-              Expanded(child: _lightMiniBox('OFF Time', '${service.thresholds.lightOffMinutes} min')),
+              Expanded(
+                child: _lightMiniBox(
+                  'OFF Time',
+                  '${service.thresholds.lightOffMinutes} min',
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: _lightMiniBox(
@@ -367,37 +388,60 @@ class DashboardPage extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w700),
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.black54,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             value,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _miniReading({required String label, required String value}) {
+  Widget _miniReading({
+    required String label,
+    required String value,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.black45,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 3),
         Text(
           value,
-          style: const TextStyle(fontSize: 13, color: Colors.black87, fontWeight: FontWeight.w800),
+          style: const TextStyle(
+            fontSize: 13,
+            color: Colors.black87,
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ],
     );
   }
 
-  Widget _sensorGrid(SensorReading reading, {required double gridAspectRatio, required double sensorValueSize}) {
+  Widget _sensorGrid(
+    SensorReading reading, {
+    required double gridAspectRatio,
+    required double sensorValueSize,
+  }) {
     return GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
@@ -469,27 +513,46 @@ class DashboardPage extends StatelessWidget {
             child: Icon(icon, color: Colors.white, size: 16),
           ),
           const Spacer(),
-          Text(title, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: Colors.white, fontSize: valueSize, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: valueSize,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             note,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              height: 1.2,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _deviceCard({required String title, required String subtitle, required bool online}) {
+  Widget _deviceCard({
+    required String title,
+    required String subtitle,
+    required bool online,
+  }) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -512,18 +575,32 @@ class DashboardPage extends StatelessWidget {
               color: const Color(0xFFF2F4F5),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.sensors_rounded, color: Colors.grey),
+            child: const Icon(
+              Icons.sensors_rounded,
+              color: Colors.grey,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
-                // Gipagamit ang conditional rendering aron mawala ang space kung walay subtitle
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
                 if (subtitle.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                    ),
+                  ),
                 ],
               ],
             ),

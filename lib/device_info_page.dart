@@ -49,8 +49,7 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
                 _sectionHeader('Hardware Intelligence', Icons.memory_outlined),
                 const SizedBox(height: 12),
                 _deviceDetailsCard(service, device),
-                const SizedBox(height: 16),
-                _credentialsCard(device),
+                // Credentials card has been removed from here
               ] else
                 _emptyStateCard(),
               const SizedBox(height: 40),
@@ -138,7 +137,6 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
       decoration: _cardDeco(),
       child: Column(
         children: [
-          // Horizontal Scrollable Chips
           SizedBox(
             height: 45, 
             width: double.infinity,
@@ -204,19 +202,6 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
           _infoTile('Assigned Name', device.deviceName, Icons.badge_outlined),
           _infoTile('Hardware UID', device.deviceId, Icons.qr_code_scanner_rounded),
           _infoTile('Sync Protocol', 'Real-time / ESP-DASH', Icons.sync_rounded),
-        ],
-      ),
-    );
-  }
-
-  Widget _credentialsCard(CleanroomDevice device) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: _cardDeco(),
-      child: Column(
-        children: [
-          _infoTile('ESP Auth User', device.espUsername, Icons.account_circle_outlined),
-          _infoTile('Secure Password', '••••••••', Icons.lock_outline_rounded),
         ],
       ),
     );
@@ -288,7 +273,7 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           TextButton(
-            onPressed: () { service.deleteSelectedRoom(); Navigator.pop(context); }, 
+            onPressed: () { service.deleteSelectedRoom(); Navigator.pop(context); },
             child: const Text('DELETE', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w900))
           ),
         ],
@@ -365,11 +350,11 @@ class _SetupModalContentState extends State<_SetupModalContent> {
       key: _formKey2,
       child: Column(
         children: [
-          _input(deviceID, 'Hardware ID (MAC/UID)', Icons.fingerprint_rounded), // Hardware specific icon
+          _input(deviceID, 'Hardware ID (MAC/UID)', Icons.fingerprint_rounded),
           const SizedBox(height: 12),
-          _input(deviceName, 'Friendly Device Name', Icons.air_rounded), // Air sensor icon
+          _input(deviceName, 'Friendly Device Name', Icons.air_rounded),
           const SizedBox(height: 12),
-          _input(espUser, 'ESP32 Admin User', Icons.admin_panel_settings_outlined), // Auth icon
+          _input(espUser, 'ESP32 Admin User', Icons.admin_panel_settings_outlined),
           const SizedBox(height: 12),
           _input(espPass, 'ESP32 Auth Password', Icons.password_rounded, isPass: true),
         ],

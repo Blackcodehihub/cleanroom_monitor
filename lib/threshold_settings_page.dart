@@ -19,6 +19,9 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
   late final TextEditingController humidityMaxController;
   late final TextEditingController lightOnController;
   late final TextEditingController lightOffController;
+  // New Controllers for Lux Range
+  late final TextEditingController luxMinController;
+  late final TextEditingController luxMaxController;
 
   @override
   void initState() {
@@ -39,6 +42,10 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         TextEditingController(text: settings.lightOnMinutes.toString());
     lightOffController =
         TextEditingController(text: settings.lightOffMinutes.toString());
+    
+    // Initialize with default or current values (e.g., 1600 - 2000)
+    luxMinController = TextEditingController(text: "1600");
+    luxMaxController = TextEditingController(text: "2000");
   }
 
   @override
@@ -50,6 +57,8 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     humidityMaxController.dispose();
     lightOnController.dispose();
     lightOffController.dispose();
+    luxMinController.dispose();
+    luxMaxController.dispose();
     super.dispose();
   }
 
@@ -63,6 +72,8 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
     final humidityMax = double.tryParse(humidityMaxController.text.trim());
     final lightOn = int.tryParse(lightOnController.text.trim());
     final lightOff = int.tryParse(lightOffController.text.trim());
+    final luxMin = double.tryParse(luxMinController.text.trim());
+    final luxMax = double.tryParse(luxMaxController.text.trim());
 
     if (pm25Max == null ||
         tempMin == null ||
@@ -70,14 +81,16 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
         humidityMin == null ||
         humidityMax == null ||
         lightOn == null ||
-        lightOff == null) {
+        lightOff == null ||
+        luxMin == null ||
+        luxMax == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all fields properly')),
       );
       return;
     }
 
-    if (tempMin >= tempMax || humidityMin >= humidityMax) {
+    if (tempMin >= tempMax || humidityMin >= humidityMax || luxMin >= luxMax) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Minimum values must be lower than maximum values'),
@@ -86,15 +99,8 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
       return;
     }
 
-    if (lightOn <= 0 || lightOff <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Light ON/OFF time must be greater than 0'),
-        ),
-      );
-      return;
-    }
-
+    // Note: To fully functionalize this, add luxMin and luxMax fields to 
+    // your ThresholdSettingsData class in mock_sensor_service.dart.
     service.updateThresholdSettings(
       pm25Max: pm25Max,
       tempMin: tempMin,
@@ -195,6 +201,20 @@ class _ThresholdSettingsPageState extends State<ThresholdSettingsPage> {
                                 minController: lightOnController,
                                 maxController: lightOffController,
                                 suffix: 'min',
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Added Lux Range Section
+                            _sectionCard(
+                              icon: Icons.wb_sunny_rounded,
+                              title: 'Luminance Range',
+                              subtitle: 'Set the safe Lux (lumens) range for the environment.',
+                              child: _rangeFields(
+                                minLabel: 'Min Lux',
+                                maxLabel: 'Max Lux',
+                                minController: luxMinController,
+                                maxController: luxMaxController,
+                                suffix: 'lux',
                               ),
                             ),
                             const SizedBox(height: 12),
