@@ -12,7 +12,6 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   HistoryFilter selectedFilter = HistoryFilter.daily;
   HistoryMetric selectedMetric = HistoryMetric.temperature;
-  // Filter state for the log list
   String selectedStatusFilter = 'ALL'; 
 
   static const Color primaryGreen = Color(0xFF2F9E44);
@@ -25,12 +24,12 @@ class _HistoryPageState extends State<HistoryPage> {
     return AnimatedBuilder(
       animation: service,
       builder: (context, _) {
-        final filteredHistory = _filterHistory(service.history);
+        final rawFilteredHistory = _filterHistory(service.history);
+        final chartData = _aggregateData(rawFilteredHistory, selectedFilter);
         
-        // Apply status filtering to the recent logs list
         final listDisplayLogs = selectedStatusFilter == 'ALL'
-            ? filteredHistory
-            : filteredHistory.where((log) => log.status == selectedStatusFilter).toList();
+            ? rawFilteredHistory
+            : rawFilteredHistory.where((log) => log.status == selectedStatusFilter).toList();
             
         final recentLogs = listDisplayLogs.take(5).toList();
 
@@ -40,26 +39,30 @@ class _HistoryPageState extends State<HistoryPage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
               children: [
-                _pageHeader(filteredHistory.length),
-                const SizedBox(height: 16),
+                _pageHeader(rawFilteredHistory.length),
+                const SizedBox(height: 24),
+                
                 _sectionLabel(
-                  title: 'Time Range',
-                  subtitle: 'Controls chart, summary, and logs',
+                  title: 'Telemetry Range',
+                  subtitle: 'Data polled automatically at 5-minute intervals',
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _filterTabs(),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
+
                 _sectionLabel(
                   title: 'Chart Metric',
-                  subtitle: 'Controls the trend chart only',
+                  subtitle: 'Select variable for trend analysis',
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _metricTabs(),
+                const SizedBox(height: 20),
+                
+                _chartCard(chartData),
                 const SizedBox(height: 16),
-                _chartCard(filteredHistory),
-                const SizedBox(height: 16),
-                _logSummaryCard(filteredHistory),
-                const SizedBox(height: 16),
+                _logSummaryCard(rawFilteredHistory),
+                const SizedBox(height: 20),
+                
                 Row(
                   children: [
                     Expanded(
@@ -107,7 +110,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _CompactLogCard(
-                        logId: 'LOG-${(filteredHistory.length - filteredHistory.indexOf(item)).toString().padLeft(3, '0')}',
+                        logId: 'LOG-${(rawFilteredHistory.length - rawFilteredHistory.indexOf(item)).toString().padLeft(3, '0')}',
                         timestamp: _formatShortDateTime(item.timestamp),
                         status: item.status,
                         pm25: '${item.pm25.toStringAsFixed(1)} µg/m³',
@@ -126,25 +129,77 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  List<SensorReading> _aggregateData(List<SensorReading> raw, HistoryFilter filter) {
+    if (raw.isEmpty) return [];
+    if (filter == HistoryFilter.daily) return raw; 
+
+    Map<String, List<SensorReading>> grouped = {};
+    for (var r in raw) {
+      String key;
+      if (filter == HistoryFilter.weekly || filter == HistoryFilter.monthly) {
+        key = "${r.timestamp.year}-${r.timestamp.month}-${r.timestamp.day}"; 
+      } else {
+        key = "${r.timestamp.year}-${r.timestamp.month}"; 
+      }
+      grouped.putIfAbsent(key, () => []).add(r);
+    }
+
+    List<SensorReading> aggregated = [];
+    grouped.forEach((key, list) {
+      double avgTemp = list.map((e) => e.temperature).reduce((a, b) => a + b) / list.length;
+      double avgHum = list.map((e) => e.humidity).reduce((a, b) => a + b) / list.length;
+      double avgPm = list.map((e) => e.pm25).reduce((a, b) => a + b) / list.length;
+      double avgLux = list.map((e) => e.luminance).reduce((a, b) => a + b) / list.length;
+
+      aggregated.add(SensorReading(
+        timestamp: list.last.timestamp, 
+        temperature: avgTemp,
+        humidity: avgHum,
+        pm25: avgPm,
+        luminance: avgLux,
+        online: list.last.online, 
+      ));
+    });
+    return aggregated;
+  }
+
   Widget _pageHeader(int count) {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'History',
+              const Text(
+                'Alima ISO Console',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
                   color: Colors.black87,
+                  letterSpacing: -0.5,
                 ),
               ),
-              SizedBox(height: 4),
-              Text(
-                'Review sensor trends and recent records',
-                style: TextStyle(fontSize: 13, color: Colors.black54),
+              const SizedBox(height: 2),
+              const Text(
+                'Historical Data & Trends',
+                style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  const Icon(Icons.wifi, size: 14, color: primaryGreen),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.battery_charging_full_rounded, size: 14, color: primaryGreen),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Active 5m Sync Cycle',
+                    style: TextStyle(
+                      fontSize: 12, 
+                      color: primaryGreen,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -153,7 +208,15 @@ class _HistoryPageState extends State<HistoryPage> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             '$count logs',
@@ -175,9 +238,10 @@ class _HistoryPageState extends State<HistoryPage> {
         Text(
           title,
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: FontWeight.w900,
             color: Colors.black87,
+            letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 4),
@@ -186,15 +250,26 @@ class _HistoryPageState extends State<HistoryPage> {
           style: const TextStyle(
             fontSize: 12,
             color: Colors.black54,
-            height: 1.35,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
   }
 
+  Widget _segmentedControlContainer({required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE9ECEF), 
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(children: children),
+    );
+  }
+
   Widget _filterTabs() {
-    return _tabContainer(
+    return _segmentedControlContainer(
       children: [
         _filterButton('Daily', HistoryFilter.daily),
         _filterButton('Weekly', HistoryFilter.weekly),
@@ -205,7 +280,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _metricTabs() {
-    return _tabContainer(
+    return _segmentedControlContainer(
       children: [
         _metricButton('Temp', HistoryMetric.temperature),
         _metricButton('Humidity', HistoryMetric.humidity),
@@ -215,36 +290,29 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _tabContainer({required List<Widget> children}) {
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(children: children),
-    );
-  }
-
   Widget _filterButton(String label, HistoryFilter filter) {
     final selected = selectedFilter == filter;
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() => selectedFilter = filter),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? primaryGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: selected
+                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))]
+                : [],
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              color: selected ? Colors.white : Colors.black54,
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+              color: selected ? primaryGreen : Colors.black54,
             ),
           ),
         ),
@@ -258,18 +326,22 @@ class _HistoryPageState extends State<HistoryPage> {
       child: GestureDetector(
         onTap: () => setState(() => selectedMetric = metric),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 11),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFEAF6EC) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: selected
+                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))]
+                : [],
           ),
           child: Text(
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
+              fontSize: 12,
+              fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
               color: selected ? primaryGreen : Colors.black54,
             ),
           ),
@@ -316,9 +388,15 @@ class _HistoryPageState extends State<HistoryPage> {
     }
 
     final interval = _chartInterval(minY, maxY);
+    
+    double xInterval = 1;
+    if (spots.isNotEmpty) {
+      xInterval = (spots.length / 4).ceilToDouble();
+      if (xInterval < 1) xInterval = 1;
+    }
 
     return Container(
-      height: 265,
+      height: 310, 
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: _cardDecoration(),
       child: Column(
@@ -337,7 +415,7 @@ class _HistoryPageState extends State<HistoryPage> {
             'Visual overview for selected time range',
             style: TextStyle(fontSize: 12, color: Colors.black54),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Expanded(
             child: spots.isEmpty
                 ? const Center(child: Text('No chart data available.'))
@@ -348,19 +426,76 @@ class _HistoryPageState extends State<HistoryPage> {
                       minX: spots.isNotEmpty ? spots.first.x : 0,
                       maxX: spots.isNotEmpty ? spots.last.x : 0,
                       clipData: const FlClipData.all(),
+                      
+                      extraLinesData: _getSafeZoneLines(),
+                      
+                      lineTouchData: LineTouchData(
+                        handleBuiltInTouches: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipColor: (touchedSpot) => Colors.black87,
+                          tooltipRoundedRadius: 8,
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((spot) {
+                              final timestamp = _formatTooltipTime(data[spot.spotIndex].timestamp);
+                              return LineTooltipItem(
+                                '${_formatChartLabel(spot.y)} ${_metricUnit()}\n',
+                                const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14),
+                                children: [
+                                  TextSpan(
+                                    text: timestamp,
+                                    style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 10),
+                                  ),
+                                ],
+                              );
+                            }).toList();
+                          },
+                        ),
+                      ),
+                      
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         horizontalInterval: interval,
                         getDrawingHorizontalLine: (_) => FlLine(
-                          color: Colors.black.withValues(alpha: 0.07),
+                          color: Colors.black.withValues(alpha: 0.05),
                           strokeWidth: 1,
                         ),
                       ),
                       titlesData: FlTitlesData(
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        bottomTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28, 
+                            interval: xInterval,
+                            getTitlesWidget: (value, meta) {
+                              // FIXED: This line stops fl_chart from forcing the max label 
+                              // and causing the labels to overlap at the end.
+                              if (value % xInterval != 0) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final index = value.toInt();
+                              if (index < 0 || index >= data.length) {
+                                return const SizedBox.shrink();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  _formatXAxisLabel(data[index].timestamp),
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 10, 
+                                    fontWeight: FontWeight.w700, 
+                                    color: Colors.black45,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
@@ -392,9 +527,21 @@ class _HistoryPageState extends State<HistoryPage> {
                           barWidth: 3,
                           isStrokeCapRound: true,
                           dotData: FlDotData(show: spots.length <= 8),
+                          shadow: Shadow(
+                            color: _metricColor().withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: _metricColor().withValues(alpha: 0.13),
+                            gradient: LinearGradient(
+                              colors: [
+                                _metricColor().withValues(alpha: 0.25),
+                                _metricColor().withValues(alpha: 0.0),
+                              ],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
                           ),
                         ),
                       ],
@@ -406,10 +553,93 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
+  ExtraLinesData _getSafeZoneLines() {
+    double? maxSafe;
+    double? minSafe;
+
+    if (selectedMetric == HistoryMetric.temperature) { maxSafe = 25.0; minSafe = 18.0; }
+    if (selectedMetric == HistoryMetric.humidity) { maxSafe = 55.0; minSafe = 30.0; }
+    if (selectedMetric == HistoryMetric.pm25) { maxSafe = 35.0; }
+
+    List<HorizontalLine> lines = [];
+    if (maxSafe != null) {
+      lines.add(HorizontalLine(
+        y: maxSafe,
+        color: Colors.redAccent.withValues(alpha: 0.5),
+        strokeWidth: 1.5,
+        dashArray: [6, 4],
+        label: HorizontalLineLabel(
+          show: true,
+          alignment: Alignment.topRight,
+          padding: const EdgeInsets.only(right: 5, bottom: 4),
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.redAccent),
+          labelResolver: (_) => 'MAX SAFE',
+        ),
+      ));
+    }
+    if (minSafe != null) {
+      lines.add(HorizontalLine(
+        y: minSafe,
+        color: Colors.blueAccent.withValues(alpha: 0.5),
+        strokeWidth: 1.5,
+        dashArray: [6, 4],
+        label: HorizontalLineLabel(
+          show: true,
+          alignment: Alignment.bottomRight,
+          padding: const EdgeInsets.only(right: 5, top: 4),
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.blueAccent),
+          labelResolver: (_) => 'MIN SAFE',
+        ),
+      ));
+    }
+    return ExtraLinesData(horizontalLines: lines);
+  }
+
+  // FIXED: Added minutes back so the Daily labels don't repeat the same hour
+  String _formatXAxisLabel(DateTime dateTime) {
+    if (selectedFilter == HistoryFilter.daily) {
+      final hour = dateTime.hour == 0 ? 12 : (dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour);
+      final minute = dateTime.minute.toString().padLeft(2, '0');
+      final amPm = dateTime.hour >= 12 ? 'PM' : 'AM';
+      return '$hour:$minute $amPm'; 
+    } else if (selectedFilter == HistoryFilter.weekly) {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      return days[dateTime.weekday - 1];
+    } else if (selectedFilter == HistoryFilter.monthly) {
+      return '${dateTime.day}';
+    } else {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return months[dateTime.month - 1];
+    }
+  }
+
+  String _formatTooltipTime(DateTime dateTime) {
+    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    if (selectedFilter == HistoryFilter.yearly) {
+      return '${months[dateTime.month - 1]} ${dateTime.year}';
+    } else if (selectedFilter == HistoryFilter.monthly || selectedFilter == HistoryFilter.weekly) {
+      return '${months[dateTime.month - 1]} ${dateTime.day}';
+    }
+    return '${months[dateTime.month - 1]} ${dateTime.day}, $hour:$minute $period';
+  }
+
+  String _metricUnit() {
+    switch (selectedMetric) {
+      case HistoryMetric.temperature: return '°C';
+      case HistoryMetric.humidity: return '%';
+      case HistoryMetric.pm25: return 'µg/m³';
+      case HistoryMetric.luminance: return 'lx';
+    }
+  }
+
   double _defaultChartPadding() {
     switch (selectedMetric) {
-      case HistoryMetric.temperature: return 1.0;
-      case HistoryMetric.humidity: return 3.0;
+      case HistoryMetric.temperature: return 2.0;
+      case HistoryMetric.humidity: return 5.0;
       case HistoryMetric.pm25: return 5.0;
       case HistoryMetric.luminance: return 1000.0;
     }
@@ -418,8 +648,8 @@ class _HistoryPageState extends State<HistoryPage> {
   double _chartInterval(double minY, double maxY) {
     final range = (maxY - minY).abs();
     switch (selectedMetric) {
-      case HistoryMetric.temperature: return range <= 4 ? 1 : 2;
-      case HistoryMetric.humidity: return range <= 10 ? 2 : 5;
+      case HistoryMetric.temperature: return range <= 6 ? 2 : 4;
+      case HistoryMetric.humidity: return range <= 20 ? 5 : 10;
       case HistoryMetric.pm25: return range <= 20 ? 5 : 10;
       case HistoryMetric.luminance: return range <= 4000 ? 1000 : 2000;
     }
@@ -488,7 +718,7 @@ class _HistoryPageState extends State<HistoryPage> {
           margin: const EdgeInsets.only(right: 8),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: isSelected ? 0.25 : 0.10),
+            color: color.withValues(alpha: isSelected ? 0.25 : 0.08),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? color : Colors.transparent,

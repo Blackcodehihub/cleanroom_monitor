@@ -29,51 +29,62 @@ class DashboardPage extends StatelessWidget {
           backgroundColor: softBg,
           body: SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 18),
+              // 1. Removed global side padding so the top bar can stretch full width
+              padding: const EdgeInsets.only(bottom: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 2. Full-width header spanning edge to edge
                   _buildTopBar(context, reading.online, warningCount),
                   const SizedBox(height: 18),
-                  _heroStatusCard(
-                    reading: reading,
-                    service: service,
-                    statusColor: statusColor,
-                    heroTempSize: heroTempSize,
-                    isSmallScreen: isSmallScreen,
-                  ),
-                  const SizedBox(height: 14),
-                  _lightControlCard(service),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Environmental Overview',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+                  
+                  // 3. Re-applied the 18px side padding ONLY to the content below the header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _heroStatusCard(
+                          reading: reading,
+                          service: service,
+                          statusColor: statusColor,
+                          heroTempSize: heroTempSize,
+                          isSmallScreen: isSmallScreen,
+                        ),
+                        const SizedBox(height: 14),
+                        _lightControlCard(service),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Environmental Overview',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _sensorGrid(
+                          reading,
+                          gridAspectRatio: gridAspectRatio,
+                          sensorValueSize: sensorValueSize,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Devices',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _deviceCard(
+                          title: 'Monitoring Node A1',
+                          subtitle: 'PM2.5 / Temp / Humidity / Lux active',
+                          online: true,
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  _sensorGrid(
-                    reading,
-                    gridAspectRatio: gridAspectRatio,
-                    sensorValueSize: sensorValueSize,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Devices',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  // "Cleanroom Main Device" has been removed here
-                  _deviceCard(
-                    title: 'Monitoring Node A1',
-                    subtitle: 'PM2.5 / Temp / Humidity / Lux active',
-                    online: true,
                   ),
                 ],
               ),
@@ -85,102 +96,133 @@ class DashboardPage extends StatelessWidget {
   }
 
   Widget _buildTopBar(BuildContext context, bool online, int warningCount) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Welcome back',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black45,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  const Text(
-                    'Cleanroom Operator',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '●',
-                    style: TextStyle(
-                      color: online ? primaryGreen : Colors.red,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return Container(
+      width: double.infinity,
+      // Added a bit more vertical padding so it feels spacious
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        // Only round the bottom corners so it sits flush against the top/sides
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(0),
         ),
-        InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const AlertsPage()),
-            );
-          },
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: primaryGreen.withValues(alpha: 0.08), 
+              border: Border.all(
+                color: primaryGreen.withValues(alpha: 0.25),
+                width: 1.5,
+              ),
+            ),
+            child: Image.asset(
+              'assets/images/logo2.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Alima Dashboard',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.black87,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      online ? Icons.sensors_rounded : Icons.sensors_off_rounded,
+                      size: 14,
+                      color: online ? primaryGreen : Colors.redAccent,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        online 
+                            ? 'Live Sync' 
+                            : 'Node Unreachable • Awaiting Uplink',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.black54,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.notifications_active_rounded,
-                  color: primaryGreen,
-                  size: 22,
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AlertsPage()),
+              );
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.topRight,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F5F7), 
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.black.withValues(alpha: 0.05),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_none_rounded,
+                    color: Colors.black87,
+                    size: 24,
+                  ),
                 ),
-              ),
-              if (warningCount > 0)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 7,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: Text(
-                      warningCount > 99 ? '99+' : warningCount.toString(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
+                if (warningCount > 0)
+                  Positioned(
+                    top: 2,
+                    right: 4,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.deepOrangeAccent,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -208,8 +250,7 @@ class DashboardPage extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            crossAxisAlignment:
-                isSmallScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            crossAxisAlignment: isSmallScreen ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Column(
