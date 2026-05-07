@@ -12,7 +12,7 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   HistoryFilter selectedFilter = HistoryFilter.daily;
   HistoryMetric selectedMetric = HistoryMetric.temperature;
-  // Added: Filter state for the log list
+  // Filter state for the log list
   String selectedStatusFilter = 'ALL'; 
 
   static const Color primaryGreen = Color(0xFF2F9E44);
@@ -103,10 +103,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 if (recentLogs.isEmpty)
                   _emptyCard()
                 else
-                  ...recentLogs.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final item = entry.value;
-
+                  ...recentLogs.map((item) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 10),
                       child: _CompactLogCard(
@@ -446,15 +443,6 @@ class _HistoryPageState extends State<HistoryPage> {
     return value.toStringAsFixed(decimals);
   }
 
-  String _formatTooltipValue(double value) {
-    switch (selectedMetric) {
-      case HistoryMetric.temperature: return '${value.toStringAsFixed(1)}°C';
-      case HistoryMetric.humidity: return '${value.toStringAsFixed(1)}%';
-      case HistoryMetric.pm25: return '${value.toStringAsFixed(1)} µg/m³';
-      case HistoryMetric.luminance: return '${value.toStringAsFixed(0)} lux';
-    }
-  }
-
   Widget _logSummaryCard(List<SensorReading> history) {
     final safe = history.where((e) => e.status == 'SAFE').length;
     final warning = history.where((e) => e.status == 'WARNING').length;
@@ -492,7 +480,6 @@ class _HistoryPageState extends State<HistoryPage> {
       child: GestureDetector(
         onTap: () {
           setState(() {
-            // Toggle filter: if already selected, clear it; otherwise, select it.
             selectedStatusFilter = isSelected ? 'ALL' : statusKey;
           });
         },
