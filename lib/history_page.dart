@@ -40,7 +40,7 @@ class _HistoryPageState extends State<HistoryPage> {
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
               children: [
                 _pageHeader(rawFilteredHistory.length),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 _sectionLabel(
                   title: 'Telemetry Range',
@@ -171,7 +171,7 @@ class _HistoryPageState extends State<HistoryPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Alima ISO Console',
+                'History & Trends',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w900,
@@ -179,12 +179,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   letterSpacing: -0.5,
                 ),
               ),
-              const SizedBox(height: 2),
-              const Text(
-                'Historical Data & Trends',
-                style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8), 
               Row(
                 children: [
                   const Icon(Icons.wifi, size: 14, color: primaryGreen),
@@ -391,7 +386,8 @@ class _HistoryPageState extends State<HistoryPage> {
     
     double xInterval = 1;
     if (spots.isNotEmpty) {
-      xInterval = (spots.length / 4).ceilToDouble();
+      // Changed divisor from 4 to 3 to space out labels more
+      xInterval = (spots.length / 3).ceilToDouble();
       if (xInterval < 1) xInterval = 1;
     }
 
@@ -467,11 +463,9 @@ class _HistoryPageState extends State<HistoryPage> {
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 28, 
+                            reservedSize: 32, // Increased reservedSize for bottom titles
                             interval: xInterval,
                             getTitlesWidget: (value, meta) {
-                              // FIXED: This line stops fl_chart from forcing the max label 
-                              // and causing the labels to overlap at the end.
                               if (value % xInterval != 0) {
                                 return const SizedBox.shrink();
                               }
@@ -486,10 +480,9 @@ class _HistoryPageState extends State<HistoryPage> {
                                   _formatXAxisLabel(data[index].timestamp),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    fontSize: 10, 
-                                    fontWeight: FontWeight.w700, 
+                                    fontSize: 9, // Reduced font size to prevent overlapping
+                                    fontWeight: FontWeight.w800, 
                                     color: Colors.black45,
-                                    height: 1.2,
                                   ),
                                 ),
                               );
@@ -595,7 +588,6 @@ class _HistoryPageState extends State<HistoryPage> {
     return ExtraLinesData(horizontalLines: lines);
   }
 
-  // FIXED: Added minutes back so the Daily labels don't repeat the same hour
   String _formatXAxisLabel(DateTime dateTime) {
     if (selectedFilter == HistoryFilter.daily) {
       final hour = dateTime.hour == 0 ? 12 : (dateTime.hour > 12 ? dateTime.hour - 12 : dateTime.hour);

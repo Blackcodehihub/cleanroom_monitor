@@ -104,7 +104,7 @@ class DashboardPage extends StatelessWidget {
         color: Colors.white,
         // Only round the bottom corners so it sits flush against the top/sides
         borderRadius: const BorderRadius.vertical(
-          bottom: Radius.circular(0),
+          bottom: Radius.circular(27),
         ),
         boxShadow: [
           BoxShadow(

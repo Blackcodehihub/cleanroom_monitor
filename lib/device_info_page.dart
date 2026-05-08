@@ -11,7 +11,6 @@ class DeviceInformationPage extends StatefulWidget {
 class _DeviceInformationPageState extends State<DeviceInformationPage> {
   // Sophisticated Color Palette
   static const Color primaryGreen = Color(0xFF2F9E44);
-  static const Color darkGreen = Color(0xFF1B5E20);
   static const Color accentGreen = Color(0xFFE8F5E9);
   static const Color softBg = Color(0xFFF8F9FA);
   static const Color cardShadow = Color(0x0D000000);
@@ -49,7 +48,6 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
                 _sectionHeader('Hardware Intelligence', Icons.memory_outlined),
                 const SizedBox(height: 12),
                 _deviceDetailsCard(service, device),
-                // Credentials card has been removed from here
               ] else
                 _emptyStateCard(),
               const SizedBox(height: 40),
@@ -76,11 +74,7 @@ class _DeviceInformationPageState extends State<DeviceInformationPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [primaryGreen, darkGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: primaryGreen, 
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(color: primaryGreen.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))
@@ -301,7 +295,6 @@ class _SetupModalContentState extends State<_SetupModalContent> {
   final wifiPass = TextEditingController();
   final deviceID = TextEditingController();
   final deviceName = TextEditingController();
-  final espUser = TextEditingController();
   final espPass = TextEditingController();
 
   @override
@@ -353,8 +346,6 @@ class _SetupModalContentState extends State<_SetupModalContent> {
           _input(deviceID, 'Hardware ID (MAC/UID)', Icons.fingerprint_rounded),
           const SizedBox(height: 12),
           _input(deviceName, 'Friendly Device Name', Icons.air_rounded),
-          const SizedBox(height: 12),
-          _input(espUser, 'ESP32 Admin User', Icons.admin_panel_settings_outlined),
           const SizedBox(height: 12),
           _input(espPass, 'ESP32 Auth Password', Icons.password_rounded, isPass: true),
         ],
@@ -410,12 +401,16 @@ class _SetupModalContentState extends State<_SetupModalContent> {
               setState(() => currentStep = 2);
             } else if (currentStep == 2 && _formKey2.currentState!.validate()) {
               widget.service.addRoom(roomName.text);
+              final newlyCreatedRoom = widget.service.rooms.last;
+              widget.service.selectRoom(newlyCreatedRoom.roomId);
+
               widget.service.addDeviceToSelectedRoom(
                 deviceId: deviceID.text,
                 deviceName: deviceName.text,
-                username: espUser.text,
+                username: "admin",
                 password: espPass.text,
               );
+              
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('System Linked Successfully!')));
             }
